@@ -1,0 +1,76 @@
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-night-900 font-body text-slate-100 antialiased;
+  }
+}
+
+@layer components {
+  .ws-map-popup .mapboxgl-popup-content {
+    @apply relative rounded-2xl border border-white/10 bg-night-900 px-3 pb-2 pr-10 pt-3 text-sm text-slate-100 shadow-glow;
+  }
+
+  .ws-map-popup .mapboxgl-popup-close-button {
+    @apply right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-night-800/80 leading-none text-slate-200 hover:bg-night-700/90 hover:text-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300;
+  }
+
+  .ws-map-popup .mapboxgl-popup-tip {
+    @apply border-b-night-900 border-t-night-900;
+  }
+
+  .ws-map-popup-title {
+    @apply text-sm font-semibold text-slate-100;
+  }
+
+  .ws-map-popup-subtitle {
+    @apply text-xs text-slate-400;
+  }
+
+  .ws-map-popup-detail {
+    @apply mt-1 text-[10px] uppercase tracking-[0.2em] text-brand-200;
+  }
+
+  .ws-map-popup-actions {
+    @apply mt-2 flex flex-wrap items-center gap-2;
+  }
+
+  .ws-map-popup-favorite {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-slate-100 transition;
+  }
+
+  .ws-map-popup-favorite:hover {
+    @apply bg-white/10;
+  }
+
+  .ws-map-popup-favorite.is-active {
+    @apply border-brand-300/60 bg-brand-400/20 text-brand-100;
+  }
+
+  .ws-map-popup-heart {
+    @apply h-4 w-4;
+    fill: transparent;
+    stroke: currentColor;
+    stroke-width: 1.5;
+  }
+
+  .ws-map-popup-favorite.is-active .ws-map-popup-heart {
+    fill: currentColor;
+  }
+
+  .ws-map-popup-signin {
+    @apply inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-slate-100 transition;
+  }
+
+  .ws-map-popup-signin:hover {
+    @apply bg-white/10;
+  }
+}

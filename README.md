@@ -17,6 +17,14 @@ A centralized directory and event discovery platform for Western Sports (Rodeo, 
 3. **Run:** `npm run dev`
 4. **Tasks:** Run `bd ready` to see available tasks.
 
+## Environment Variables
+
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key (client safe)
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (server-only)
+- `NEXT_PUBLIC_MAPBOX_TOKEN` - Mapbox public token
+- `NEXT_PUBLIC_APP_URL` - Base app URL (used for metadata)
+
 ## Tech Stack
 
 - **Framework:** Next.js (App Router)

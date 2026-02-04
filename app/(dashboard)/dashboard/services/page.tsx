@@ -1,0 +1,184 @@
+import Link from 'next/link';
+
+import { getUserServices } from '@/lib/supabase/services';
+
+import { createServiceAction } from './actions';
+
+export const dynamic = 'force-dynamic';
+
+type ServicesPageProps = {
+  searchParams?: {
+    error?: string;
+    success?: string;
+  };
+};
+
+const statusStyles: Record<string, string> = {
+  APPROVED: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+  PENDING: 'border-amber-300/40 bg-amber-500/10 text-amber-100',
+  REJECTED: 'border-red-400/40 bg-red-500/10 text-red-100',
+  ARCHIVED: 'border-slate-400/30 bg-slate-500/10 text-slate-100',
+};
+
+export default async function ServicesPage({ searchParams }: ServicesPageProps) {
+  const { data: services, error } = await getUserServices();
+  const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : error;
+  const successMessage = searchParams?.success ? decodeURIComponent(searchParams.success) : null;
+
+  return (
+    <section className="px-6 py-12 sm:py-16">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <header className="flex flex-col gap-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Services</p>
+          <h1 className="font-display text-3xl text-slate-100 sm:text-4xl">
+            Manage your services
+          </h1>
+          <p className="text-sm text-slate-300">
+            List your business or service for approval before it appears in the directory.
+          </p>
+          <Link
+            href="/dashboard"
+            className="text-xs uppercase tracking-[0.2em] text-brand-200 hover:text-brand-100"
+          >
+            Back to dashboard
+          </Link>
+        </header>
+
+        {errorMessage ? (
+          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-5 py-4 text-sm text-red-100">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        {successMessage ? (
+          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
+            {successMessage}
+          </div>
+        ) : null}
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-3xl border border-white/10 bg-night-800/80 p-6 shadow-glow">
+            <h2 className="font-display text-2xl text-slate-100">Add a service</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              Tell the community what you offer and how far you travel.
+            </p>
+            <form action={createServiceAction} className="mt-6 grid gap-4">
+              <label className="grid gap-2 text-sm text-slate-300">
+                Service name
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                />
+              </label>
+              <label className="grid gap-2 text-sm text-slate-300">
+                Category
+                <input
+                  type="text"
+                  name="category"
+                  required
+                  placeholder="Farrier, Trainer, Stock Contractor"
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-500"
+                />
+              </label>
+              <label className="grid gap-2 text-sm text-slate-300">
+                Description (optional)
+                <textarea
+                  name="description"
+                  rows={3}
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                />
+              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm text-slate-300">
+                  Phone (optional)
+                  <input
+                    type="tel"
+                    name="phone"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm text-slate-300">
+                  Website (optional)
+                  <input
+                    type="url"
+                    name="website_url"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                  />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm text-slate-300">
+                  Service radius (miles)
+                  <input
+                    type="number"
+                    name="service_radius_miles"
+                    min={1}
+                    required
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm text-slate-300">
+                  ZIP code
+                  <input
+                    type="text"
+                    name="zip_code"
+                    required
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                  />
+                </label>
+              </div>
+              <button
+                type="submit"
+                className="mt-2 rounded-full border border-brand-400/50 bg-brand-400/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:bg-brand-400/30"
+              >
+                Submit service
+              </button>
+            </form>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-night-900/70 p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl text-slate-100">Your services</h2>
+              <span className="text-xs uppercase tracking-[0.3em] text-brand-300">
+                {services?.length ?? 0} total
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {services && services.length > 0 ? (
+                services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="rounded-2xl border border-white/10 bg-night-800/70 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-100">{service.name}</p>
+                        <p className="text-xs text-slate-400">
+                          {service.category} - {service.service_radius_miles} miles -{' '}
+                          {service.zip_code}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.2em] ${
+                          statusStyles[service.status] ?? statusStyles.PENDING
+                        }`}
+                      >
+                        {service.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">
+                  No services yet. Submit your first service to reach the community.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
