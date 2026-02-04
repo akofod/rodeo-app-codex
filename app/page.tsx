@@ -17,7 +17,7 @@ export default function HomePage() {
               <h1 className="mt-6 font-display text-4xl leading-tight text-slate-50 sm:text-5xl lg:text-6xl">
                 Find rodeos, jackpots, and western events.
               </h1>
-              <p className="mt-4 text-lg text-slate-300 sm:text-xl">
+              <p className="mt-4 text-xl text-slate-300 sm:text-2xl">
                 Events, venues, and trusted pros in one hub for fans, producers, and providers.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
