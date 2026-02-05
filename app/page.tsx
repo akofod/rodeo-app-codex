@@ -44,7 +44,7 @@ export default function HomePage() {
       </section>
       <section className="relative px-6 pb-20 pt-12">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-night-800/60 to-night-900" />
-        <div className="relative mx-auto grid max-w-6xl gap-6 md:grid-cols-[1.2fr_1fr]">
+        <div className="relative mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
             <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Map Preview</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
@@ -60,6 +60,15 @@ export default function HomePage() {
             >
               Open map
             </Link>
+          </div>
+          <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
+            <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Event Search</p>
+            <h2 className="mt-4 font-display text-2xl text-slate-100">
+              Search events by location.
+            </h2>
+            <p className="mt-3 text-sm text-slate-300">
+              Filter the calendar by city, state, or zip to find nearby rodeos and jackpots.
+            </p>
           </div>
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
             <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Service Network</p>
