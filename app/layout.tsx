@@ -5,6 +5,7 @@ import { Cinzel, Source_Sans_3 } from 'next/font/google';
 
 import './globals.css';
 
+import HeaderNav from '@/components/HeaderNav';
 import { signOut } from '@/app/(auth)/actions';
 import { getSiteUrl, siteDescription, siteName } from '@/lib/seo/site';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -23,9 +24,6 @@ const bodyFont = Source_Sans_3({
 });
 
 const appUrl = getSiteUrl();
-const navLinkClass =
-  'inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[13px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100';
-
 export const metadata: Metadata = {
   title: {
     default: siteName,
@@ -91,106 +89,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   </p>
                 </div>
               </Link>
-              <nav className="flex items-center gap-3">
-                <div className="hidden items-center gap-3 sm:flex">
-                  <Link href="/events" className={navLinkClass}>
-                    Events
-                  </Link>
-                  <Link href="/venues" className={navLinkClass}>
-                    Venues
-                  </Link>
-                  <Link href="/services" className={navLinkClass}>
-                    Services
-                  </Link>
-                  {user ? (
-                    <>
-                      <Link href="/dashboard" className={navLinkClass}>
-                        Dashboard
-                      </Link>
-                      <details className="relative">
-                        <summary className="list-none rounded-full border border-white/10 bg-white/5 p-1 text-brand-100 transition hover:border-brand-300 hover:text-brand-50 [&::-webkit-details-marker]:hidden">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-400/20 text-sm font-semibold text-brand-100">
-                            {userInitial}
-                          </span>
-                        </summary>
-                        <div className="absolute right-0 mt-2 min-w-[160px] rounded-2xl border border-white/10 bg-night-900/95 p-2 shadow-glow">
-                          <form action={signOut}>
-                            <button
-                              type="submit"
-                              className="w-full rounded-xl px-3 py-2 text-left text-[11px] uppercase tracking-[0.2em] text-slate-200 transition hover:bg-white/10"
-                            >
-                              Sign out
-                            </button>
-                          </form>
-                        </div>
-                      </details>
-                    </>
-                  ) : (
-                    <Link href="/sign-in" className={navLinkClass}>
-                      Sign In
-                    </Link>
-                  )}
-                </div>
-                <details className="relative sm:hidden">
-                  <summary className="list-none rounded-full border border-white/15 bg-white/5 p-2 text-brand-100 transition hover:border-brand-300 hover:text-brand-50 [&::-webkit-details-marker]:hidden">
-                    <span className="sr-only">Open menu</span>
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    >
-                      <path d="M4 7h16" />
-                      <path d="M4 12h16" />
-                      <path d="M4 17h16" />
-                    </svg>
-                  </summary>
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-night-900/95 p-2 shadow-glow">
-                    <div className="flex flex-col gap-1">
-                      <Link href="/events" className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate-200 hover:bg-white/10">
-                        Events
-                      </Link>
-                      <Link href="/venues" className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate-200 hover:bg-white/10">
-                        Venues
-                      </Link>
-                      <Link
-                        href="/services"
-                        className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate-200 hover:bg-white/10"
-                      >
-                        Services
-                      </Link>
-                      {user ? (
-                        <>
-                          <Link
-                            href="/dashboard"
-                            className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate-200 hover:bg-white/10"
-                          >
-                            Dashboard
-                          </Link>
-                          <form action={signOut}>
-                            <button
-                              type="submit"
-                              className="w-full rounded-xl px-3 py-2 text-left text-xs uppercase tracking-[0.2em] text-slate-200 transition hover:bg-white/10"
-                            >
-                              Sign out
-                            </button>
-                          </form>
-                        </>
-                      ) : (
-                        <Link
-                          href="/sign-in"
-                          className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate-200 hover:bg-white/10"
-                        >
-                          Sign In
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </details>
-              </nav>
+              <HeaderNav
+                isAuthenticated={Boolean(user)}
+                userInitial={userInitial}
+                onSignOut={signOut}
+              />
             </div>
           </header>
           <main className="flex-1">{children}</main>
