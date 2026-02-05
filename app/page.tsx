@@ -43,7 +43,23 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-night-800/60 to-night-900" />
         <div className="relative mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
-            <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Map Preview</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-400/30 bg-brand-400/10 text-brand-100">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 6.5l5-2 6 2 5-2v13l-5 2-6-2-5 2v-13z" />
+                <path d="M9 4.5v13" />
+                <path d="M15 6.5v13" />
+              </svg>
+            </div>
+            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-300">Map Preview</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               A single map of the western circuit.
             </h2>
@@ -59,7 +75,22 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
-            <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Event Search</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-400/30 bg-brand-400/10 text-brand-100">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="4.5" />
+                <path d="M16 16l4 4" />
+              </svg>
+            </div>
+            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-300">Event Search</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Search events by location.
             </h2>
@@ -74,7 +105,23 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
-            <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Service Network</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-400/30 bg-brand-400/10 text-brand-100">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M7 5v6a5 5 0 0 0 10 0V5" />
+                <path d="M7 5h2" />
+                <path d="M15 5h2" />
+              </svg>
+            </div>
+            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-300">Service Network</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Services vetted by the community.
             </h2>
