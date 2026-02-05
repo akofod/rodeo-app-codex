@@ -24,7 +24,7 @@ const bodyFont = Source_Sans_3({
 
 const appUrl = getSiteUrl();
 const navLinkClass =
-  'inline-flex items-center rounded-full border border-white/10 px-4 py-1.5 text-[12px] uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100';
+  'inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[13px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100';
 
 export const metadata: Metadata = {
   title: {
