@@ -12,9 +12,6 @@ export default function HomePage() {
         <div className="relative mx-auto flex max-w-6xl flex-col gap-10">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-400/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-brand-200">
-                North America - Beta access
-              </span>
               <h1 className="mt-6 font-display text-4xl leading-tight text-slate-50 sm:text-5xl lg:text-6xl">
                 Find rodeos, jackpots, and western events.
               </h1>
