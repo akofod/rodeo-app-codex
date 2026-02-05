@@ -56,7 +56,7 @@ export default function HomePage() {
             </p>
             <Link
               href="/map"
-              className="mt-4 inline-flex text-xs uppercase tracking-[0.2em] text-brand-200 hover:text-brand-100"
+              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100"
             >
               Open map
             </Link>
@@ -69,6 +69,12 @@ export default function HomePage() {
             <p className="mt-3 text-sm text-slate-300">
               Filter the calendar by city, state, or zip to find nearby rodeos and jackpots.
             </p>
+            <Link
+              href="/events"
+              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100"
+            >
+              View events
+            </Link>
           </div>
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
             <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Service Network</p>
@@ -79,6 +85,12 @@ export default function HomePage() {
               Each listing is reviewed before going live so riders can trust the providers they
               find.
             </p>
+            <Link
+              href="/services"
+              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100"
+            >
+              Browse services
+            </Link>
           </div>
         </div>
       </section>
