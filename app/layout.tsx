@@ -97,49 +97,64 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </header>
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-white/10 bg-night-900/80">
-            <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 text-xs text-slate-400">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-xs uppercase tracking-[0.3em] text-brand-300">
-                  Western Sports Hub
-                </span>
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/events" className="hover:text-brand-100">
-                    Events
-                  </Link>
-                  <Link href="/venues" className="hover:text-brand-100">
-                    Venues
-                  </Link>
-                  <Link href="/services" className="hover:text-brand-100">
-                    Services
-                  </Link>
-                  {user ? (
-                    <Link href="/dashboard" className="hover:text-brand-100">
-                      Dashboard
+          <footer className="border-t border-white/10 bg-night-950/90">
+            <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12 text-sm text-slate-300">
+              <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs uppercase tracking-[0.3em] text-brand-300">
+                    Western Sports Hub
+                  </span>
+                  <p className="text-base text-slate-200">
+                    Built for the western community. Discover events, venues, and trusted pros in
+                    one place.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs uppercase tracking-[0.3em] text-brand-300">
+                    Navigate
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    <Link href="/events" className="hover:text-brand-100">
+                      Events
                     </Link>
-                  ) : (
-                    <Link href="/sign-in" className="hover:text-brand-100">
-                      Sign In
+                    <Link href="/venues" className="hover:text-brand-100">
+                      Venues
                     </Link>
-                  )}
+                    <Link href="/services" className="hover:text-brand-100">
+                      Services
+                    </Link>
+                    {user ? (
+                      <Link href="/dashboard" className="hover:text-brand-100">
+                        Dashboard
+                      </Link>
+                    ) : (
+                      <Link href="/sign-in" className="hover:text-brand-100">
+                        Sign In
+                      </Link>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs uppercase tracking-[0.3em] text-brand-300">Company</span>
+                  <div className="flex flex-col gap-2">
+                    <Link href="/about" className="hover:text-brand-100">
+                      About
+                    </Link>
+                    <Link href="/contact" className="hover:text-brand-100">
+                      Contact
+                    </Link>
+                    <Link href="/privacy" className="hover:text-brand-100">
+                      Privacy Policy
+                    </Link>
+                    <Link href="/terms" className="hover:text-brand-100">
+                      Terms of Service
+                    </Link>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <span>Built for the western community.</span>
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/about" className="hover:text-brand-100">
-                    About
-                  </Link>
-                  <Link href="/contact" className="hover:text-brand-100">
-                    Contact
-                  </Link>
-                  <Link href="/privacy" className="hover:text-brand-100">
-                    Privacy Policy
-                  </Link>
-                  <Link href="/terms" className="hover:text-brand-100">
-                    Terms of Service
-                  </Link>
-                </div>
+              <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+                <span>© {new Date().getFullYear()} Western Sports Hub.</span>
+                <span className="text-slate-500">Rodeo discovery network.</span>
               </div>
             </div>
           </footer>
