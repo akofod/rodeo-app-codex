@@ -30,11 +30,11 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="overflow-hidden rounded-3xl">
+            <div className="relative">
               <Image
                 src={heroImage}
                 alt="Western Sports Hub hero"
-                className="h-full w-full object-cover"
+                className="h-full w-full rounded-3xl object-cover"
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 priority
               />
