@@ -8,6 +8,7 @@ export default function HomePage() {
     <>
       <section className="relative overflow-hidden px-6 py-16 sm:py-24">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(216,127,27,0.24),_transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent via-night-900/60 to-night-900" />
         <div className="relative mx-auto flex max-w-6xl flex-col gap-10">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="max-w-3xl">
