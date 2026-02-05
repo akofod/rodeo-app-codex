@@ -15,7 +15,7 @@ export default function HomePage() {
               <h1 className="mt-6 font-display text-4xl leading-tight text-slate-50 sm:text-5xl lg:text-6xl">
                 Find rodeos, jackpots, and western events.
               </h1>
-              <p className="mt-4 text-xl text-slate-300 sm:text-2xl">
+              <p className="mt-4 text-xl text-slate-200 sm:text-2xl">
                 Events, venues, and trusted pros in one hub for fans, producers, and providers.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -59,17 +59,17 @@ export default function HomePage() {
                 <path d="M15 6.5v13" />
               </svg>
             </div>
-            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-300">Map Preview</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Map Preview</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               A single map of the western circuit.
             </h2>
-            <p className="mt-3 text-sm text-slate-300">
+            <p className="mt-3 text-base text-slate-200">
               Mapbox-powered discovery will highlight approved events and venues by discipline,
               date, and distance.
             </p>
             <Link
               href="/map"
-              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100"
+              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:text-brand-50"
             >
               Open map
             </Link>
@@ -90,16 +90,16 @@ export default function HomePage() {
                 <path d="M16 16l4 4" />
               </svg>
             </div>
-            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-300">Event Search</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Event Search</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Search events by location.
             </h2>
-            <p className="mt-3 text-sm text-slate-300">
+            <p className="mt-3 text-base text-slate-200">
               Filter the calendar by city, state, or zip to find nearby rodeos and jackpots.
             </p>
             <Link
               href="/events"
-              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100"
+              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:text-brand-50"
             >
               View events
             </Link>
@@ -121,17 +121,17 @@ export default function HomePage() {
                 <path d="M15 5h2" />
               </svg>
             </div>
-            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-brand-300">Service Network</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Service Network</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Services vetted by the community.
             </h2>
-            <p className="mt-3 text-sm text-slate-300">
+            <p className="mt-3 text-base text-slate-200">
               Each listing is reviewed before going live so riders can trust the providers they
               find.
             </p>
             <Link
               href="/services"
-              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-200 transition hover:border-brand-300 hover:text-brand-100"
+              className="mt-5 inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:text-brand-50"
             >
               Browse services
             </Link>
