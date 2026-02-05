@@ -27,12 +27,12 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative lg:pr-4">
               <Image
                 src={heroImage}
                 alt="Western Sports Hub hero"
-                className="h-full w-full rounded-3xl object-cover"
-                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="h-full w-full rounded-3xl object-cover lg:scale-[0.92]"
+                sizes="(max-width: 1024px) 100vw, 36vw"
                 priority
               />
             </div>
