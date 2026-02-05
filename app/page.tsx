@@ -40,8 +40,8 @@ export default function HomePage() {
               />
             </div>
           </div>
-          <div className="grid gap-6 rounded-3xl border border-white/15 bg-night-900/60 p-8 shadow-glow sm:grid-cols-3">
-            <div className="rounded-3xl border border-white/20 bg-night-800/80 p-7 shadow-[0_12px_30px_rgba(0,0,0,0.4)] sm:p-8">
+          <div className="grid gap-6 rounded-3xl border border-white/20 bg-night-900/70 p-8 shadow-glow sm:grid-cols-3">
+            <div className="rounded-3xl border border-white/25 bg-night-800/90 p-7 shadow-[0_16px_36px_rgba(0,0,0,0.45)] sm:p-8">
               <div className="flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-400/20 text-brand-100">
                   <svg
@@ -81,7 +81,7 @@ export default function HomePage() {
                 Radius-based search across rodeos, bull riding, jackpots, and clinics.
               </p>
             </div>
-            <div className="rounded-3xl border border-white/20 bg-night-800/80 p-7 shadow-[0_12px_30px_rgba(0,0,0,0.4)] sm:p-8">
+            <div className="rounded-3xl border border-white/25 bg-night-800/90 p-7 shadow-[0_16px_36px_rgba(0,0,0,0.45)] sm:p-8">
               <div className="flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-400/20 text-brand-100">
                   <svg
@@ -121,7 +121,7 @@ export default function HomePage() {
                 Producers and riders submit events and venues with quick approval workflows.
               </p>
             </div>
-            <div className="rounded-3xl border border-white/20 bg-night-800/80 p-7 shadow-[0_12px_30px_rgba(0,0,0,0.4)] sm:p-8">
+            <div className="rounded-3xl border border-white/25 bg-night-800/90 p-7 shadow-[0_16px_36px_rgba(0,0,0,0.45)] sm:p-8">
               <div className="flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-400/20 text-brand-100">
                   <svg
@@ -167,7 +167,7 @@ export default function HomePage() {
       <section className="relative px-6 pb-20 pt-12">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-night-800/60 to-night-900" />
         <div className="relative mx-auto grid max-w-6xl gap-6 md:grid-cols-[1.2fr_1fr]">
-          <div className="rounded-3xl border border-white/15 bg-night-800/80 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+          <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
             <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Map Preview</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               A single map of the western circuit.
@@ -183,7 +183,7 @@ export default function HomePage() {
               Open map
             </Link>
           </div>
-          <div className="rounded-3xl border border-white/15 bg-night-800/80 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+          <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
             <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Service Network</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Services vetted by the community.
