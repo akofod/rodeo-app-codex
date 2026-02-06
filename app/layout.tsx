@@ -81,10 +81,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   priority
                 />
                 <div>
-                  <p className="font-display text-lg tracking-wide text-brand-100 transition group-hover:text-brand-50">
+                  <p className="font-display text-sm tracking-wide text-brand-100 transition group-hover:text-brand-50 sm:text-base lg:text-lg">
                     Western Sports Hub
                   </p>
-                  <p className="text-sm uppercase tracking-[0.3em] text-brand-200 transition group-hover:text-brand-100">
+                  <p className="hidden text-xs uppercase tracking-[0.3em] text-brand-200 transition group-hover:text-brand-100 lg:block">
                     Rodeo discovery network
                   </p>
                 </div>
@@ -97,7 +97,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </header>
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-white/10 bg-night-950/90">
+          <footer className="border-t border-white/10 bg-night-950/95">
             <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12 text-base text-slate-200">
               <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
                 <div className="flex flex-col gap-3">
@@ -152,9 +152,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-                <span>© {new Date().getFullYear()} Western Sports Hub.</span>
-                <span className="text-slate-400">Rodeo discovery network.</span>
+              <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-slate-200 sm:flex-row sm:items-center sm:justify-between">
+                <span>&copy; {new Date().getFullYear()} Western Sports Hub.</span>
+                <span className="text-slate-300">Rodeo discovery network.</span>
               </div>
             </div>
           </footer>
@@ -163,3 +163,4 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     </html>
   );
 }
+
