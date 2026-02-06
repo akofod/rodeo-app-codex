@@ -21,7 +21,27 @@ export const metadata: Metadata = buildPageMetadata({
 type EventsPublicPageProps = {
   searchParams?: {
     error?: string;
+    location?: string | string[];
+    radius?: string | string[];
   };
+};
+
+const getSearchParamValue = (value?: string | string[]) => {
+  if (!value) {
+    return '';
+  }
+  return Array.isArray(value) ? value[0] ?? '' : value;
+};
+
+const normalizeLocation = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+const parseRadius = (value: string) => {
+  const parsed = Number.parseInt(value, 10);
+  const allowedRadii = new Set([10, 25, 50, 100, 250]);
+  if (!Number.isFinite(parsed) || !allowedRadii.has(parsed)) {
+    return 50;
+  }
+  return parsed;
 };
 
 const formatDate = (value: string) => {
@@ -46,6 +66,12 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
   const venueNameById = new Map(venues.map((venue) => [venue.id, venue.name]));
   const eventIds = events.map((event) => event.id);
   const eventSchema = buildEventItemListSchema(events, venues);
+  const locationParam = normalizeLocation(getSearchParamValue(searchParams?.location));
+  const radiusParam = getSearchParamValue(searchParams?.radius);
+  const radius = parseRadius(radiusParam);
+  const activeFilterLabel = locationParam
+    ? `Within ${radius} miles of ${locationParam}`
+    : '';
   const favoritesResult =
     user && eventIds.length > 0
       ? await getOptionalUserFavorites('EVENT', eventIds)
@@ -74,6 +100,12 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
               Browse upcoming rodeos, jackpots, and clinics. Submit your own listings once you are
               signed in.
             </p>
+            {activeFilterLabel ? (
+              <div className="rounded-2xl border border-brand-400/30 bg-brand-400/10 px-4 py-3 text-sm text-brand-100">
+                <p className="text-xs uppercase tracking-[0.3em] text-brand-200">Active filter</p>
+                <p className="mt-1 text-sm text-brand-100">{activeFilterLabel}</p>
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/venues"
