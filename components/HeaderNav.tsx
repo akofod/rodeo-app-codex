@@ -39,15 +39,6 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
   return (
     <nav className="flex items-center gap-3">
       <div className="hidden items-center gap-3 sm:flex">
-        <Link href="/events" className={navLinkClass('/events')} aria-current={isActive('/events') ? 'page' : undefined}>
-          Events
-        </Link>
-        <Link href="/venues" className={navLinkClass('/venues')} aria-current={isActive('/venues') ? 'page' : undefined}>
-          Venues
-        </Link>
-        <Link href="/services" className={navLinkClass('/services')} aria-current={isActive('/services') ? 'page' : undefined}>
-          Services
-        </Link>
         {isAuthenticated ? (
           <>
             <Link
@@ -56,6 +47,27 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
               aria-current={isActive('/dashboard') ? 'page' : undefined}
             >
               Dashboard
+            </Link>
+            <Link
+              href="/events"
+              className={navLinkClass('/events')}
+              aria-current={isActive('/events') ? 'page' : undefined}
+            >
+              Events
+            </Link>
+            <Link
+              href="/venues"
+              className={navLinkClass('/venues')}
+              aria-current={isActive('/venues') ? 'page' : undefined}
+            >
+              Venues
+            </Link>
+            <Link
+              href="/services"
+              className={navLinkClass('/services')}
+              aria-current={isActive('/services') ? 'page' : undefined}
+            >
+              Services
             </Link>
             <details className="relative">
               <summary className="list-none rounded-full border border-white/10 bg-white/5 p-1 text-brand-100 transition hover:border-brand-300 hover:text-brand-50 [&::-webkit-details-marker]:hidden">
@@ -76,9 +88,36 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
             </details>
           </>
         ) : (
-          <Link href="/sign-in" className={navLinkClass('/sign-in')} aria-current={isActive('/sign-in') ? 'page' : undefined}>
-            Sign In
-          </Link>
+          <>
+            <Link
+              href="/events"
+              className={navLinkClass('/events')}
+              aria-current={isActive('/events') ? 'page' : undefined}
+            >
+              Events
+            </Link>
+            <Link
+              href="/venues"
+              className={navLinkClass('/venues')}
+              aria-current={isActive('/venues') ? 'page' : undefined}
+            >
+              Venues
+            </Link>
+            <Link
+              href="/services"
+              className={navLinkClass('/services')}
+              aria-current={isActive('/services') ? 'page' : undefined}
+            >
+              Services
+            </Link>
+            <Link
+              href="/sign-in"
+              className={navLinkClass('/sign-in')}
+              aria-current={isActive('/sign-in') ? 'page' : undefined}
+            >
+              Sign In
+            </Link>
+          </>
         )}
       </div>
       <details className="relative sm:hidden">
@@ -100,19 +139,6 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
         </summary>
         <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-night-900/95 p-2 shadow-glow">
           <div className="flex flex-col gap-1">
-            <Link href="/events" className={mobileLinkClass('/events')} aria-current={isActive('/events') ? 'page' : undefined}>
-              Events
-            </Link>
-            <Link href="/venues" className={mobileLinkClass('/venues')} aria-current={isActive('/venues') ? 'page' : undefined}>
-              Venues
-            </Link>
-            <Link
-              href="/services"
-              className={mobileLinkClass('/services')}
-              aria-current={isActive('/services') ? 'page' : undefined}
-            >
-              Services
-            </Link>
             {isAuthenticated ? (
               <>
                 <Link
@@ -121,6 +147,27 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
                   aria-current={isActive('/dashboard') ? 'page' : undefined}
                 >
                   Dashboard
+                </Link>
+                <Link
+                  href="/events"
+                  className={mobileLinkClass('/events')}
+                  aria-current={isActive('/events') ? 'page' : undefined}
+                >
+                  Events
+                </Link>
+                <Link
+                  href="/venues"
+                  className={mobileLinkClass('/venues')}
+                  aria-current={isActive('/venues') ? 'page' : undefined}
+                >
+                  Venues
+                </Link>
+                <Link
+                  href="/services"
+                  className={mobileLinkClass('/services')}
+                  aria-current={isActive('/services') ? 'page' : undefined}
+                >
+                  Services
                 </Link>
                 <form action={onSignOut}>
                   <button
@@ -132,9 +179,36 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
                 </form>
               </>
             ) : (
-              <Link href="/sign-in" className={mobileLinkClass('/sign-in')} aria-current={isActive('/sign-in') ? 'page' : undefined}>
-                Sign In
-              </Link>
+              <>
+                <Link
+                  href="/events"
+                  className={mobileLinkClass('/events')}
+                  aria-current={isActive('/events') ? 'page' : undefined}
+                >
+                  Events
+                </Link>
+                <Link
+                  href="/venues"
+                  className={mobileLinkClass('/venues')}
+                  aria-current={isActive('/venues') ? 'page' : undefined}
+                >
+                  Venues
+                </Link>
+                <Link
+                  href="/services"
+                  className={mobileLinkClass('/services')}
+                  aria-current={isActive('/services') ? 'page' : undefined}
+                >
+                  Services
+                </Link>
+                <Link
+                  href="/sign-in"
+                  className={mobileLinkClass('/sign-in')}
+                  aria-current={isActive('/sign-in') ? 'page' : undefined}
+                >
+                  Sign In
+                </Link>
+              </>
             )}
           </div>
         </div>

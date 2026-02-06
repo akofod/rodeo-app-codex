@@ -39,7 +39,72 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="relative px-6 pb-20 pt-12">
+      <section className="relative px-6 pb-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-night-900/40 to-night-900" />
+        <div className="relative mx-auto max-w-6xl">
+          <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-brand-200">Quick search</p>
+                <h2 className="mt-3 font-display text-2xl text-slate-100">
+                  Find events near your location.
+                </h2>
+                <p className="mt-3 text-base text-slate-200">
+                  Enter a city, state, or zip code to surface the closest rodeos and jackpots.
+                </p>
+              </div>
+            </div>
+            <form
+              action="/events"
+              method="get"
+              className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-end"
+            >
+              <div className="flex flex-1 flex-col gap-2">
+                <label
+                  htmlFor="location"
+                  className="text-xs uppercase tracking-[0.3em] text-brand-200"
+                >
+                  Location
+                </label>
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  placeholder="City, State or Zip Code"
+                  className="w-full rounded-2xl border border-white/10 bg-night-900/70 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 transition focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+                />
+              </div>
+              <div className="flex flex-col gap-2 lg:w-48">
+                <label
+                  htmlFor="radius"
+                  className="text-xs uppercase tracking-[0.3em] text-brand-200"
+                >
+                  Radius
+                </label>
+                <select
+                  id="radius"
+                  name="radius"
+                  defaultValue="50"
+                  className="w-full rounded-2xl border border-white/10 bg-night-900/70 px-4 py-3 text-sm text-slate-100 transition focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+                >
+                  <option value="10">10 miles</option>
+                  <option value="25">25 miles</option>
+                  <option value="50">50 miles</option>
+                  <option value="100">100 miles</option>
+                  <option value="250">250 miles</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-full border border-brand-400/50 bg-brand-400/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:bg-brand-400/30"
+              >
+                Search events
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+      <section className="relative px-6 pb-20 pt-4">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-night-800/60 to-night-900" />
         <div className="relative mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-3xl border border-white/25 bg-night-800/90 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.45)]">
