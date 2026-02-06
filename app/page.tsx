@@ -23,7 +23,7 @@ export default function HomePage() {
                   href="/events"
                   className="rounded-full border border-brand-400/50 bg-brand-400/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:bg-brand-400/30"
                 >
-                  Explore Events
+                  Explore events
                 </Link>
               </div>
             </div>
@@ -59,7 +59,7 @@ export default function HomePage() {
                 <path d="M15 6.5v13" />
               </svg>
             </div>
-            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Map Preview</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Map preview</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               A single map of the western circuit.
             </h2>
@@ -90,7 +90,7 @@ export default function HomePage() {
                 <path d="M16 16l4 4" />
               </svg>
             </div>
-            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Event Search</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Event search</p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Search events by location.
             </h2>
@@ -121,7 +121,9 @@ export default function HomePage() {
                 <path d="M15 5h2" />
               </svg>
             </div>
-            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">Service Network</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.3em] text-brand-200">
+              Service network
+            </p>
             <h2 className="mt-4 font-display text-2xl text-slate-100">
               Services vetted by the community.
             </h2>
