@@ -36,13 +36,18 @@ const getSearchParamValue = (value?: string | string[]) => {
 
 const normalizeLocation = (value: string) => value.replace(/\s+/g, ' ').trim();
 
+const allowedRadii = [10, 25, 50, 100, 250];
+
 const parseRadius = (value: string) => {
-  const parsed = Number.parseInt(value, 10);
-  const allowedRadii = new Set([10, 25, 50, 100, 250]);
-  if (!Number.isFinite(parsed) || !allowedRadii.has(parsed)) {
-    return 50;
+  if (!value) {
+    return { radius: 50, isValid: true };
   }
-  return parsed;
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || !allowedRadii.includes(parsed)) {
+    return { radius: 50, isValid: false };
+  }
+  return { radius: parsed, isValid: true };
 };
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
@@ -86,10 +91,18 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
   const venueNameById = new Map(venues.map((venue) => [venue.id, venue.name]));
   const locationParam = normalizeLocation(getSearchParamValue(searchParams?.location));
   const radiusParam = getSearchParamValue(searchParams?.radius);
-  const radius = parseRadius(radiusParam);
+  const radiusSelection = parseRadius(radiusParam);
+  const radius = radiusSelection.radius;
+  const locationValidationError =
+    locationParam && locationParam.length < 3
+      ? 'Enter at least 3 characters for a location search.'
+      : null;
+  const radiusValidationError = radiusSelection.isValid
+    ? null
+    : 'Select a valid radius option to continue.';
   let geocodedLocation: Awaited<ReturnType<typeof geocodeAddress>> = null;
 
-  if (locationParam) {
+  if (locationParam && !locationValidationError) {
     try {
       geocodedLocation = await geocodeAddress(locationParam);
     } catch {
@@ -97,10 +110,15 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
     }
   }
 
+  const locationLookupError =
+    locationParam && !locationValidationError && !geocodedLocation
+      ? 'We could not find that location. Try a nearby city, state, or zip code.'
+      : null;
   const resolvedLocationName = geocodedLocation?.placeName ?? locationParam;
-  const activeFilterLabel = resolvedLocationName
-    ? `Within ${radius} miles of ${resolvedLocationName}`
-    : '';
+  const activeFilterLabel =
+    resolvedLocationName && geocodedLocation
+      ? `Within ${radius} miles of ${resolvedLocationName}`
+      : '';
 
   const venuesById = new Map(venues.map((venue) => [venue.id, venue]));
   const filteredEvents =
@@ -126,9 +144,14 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
       ? await getOptionalUserFavorites('EVENT', eventIds)
       : { data: [], error: null };
   const favoriteIds = new Set((favoritesResult.data ?? []).map((favorite) => favorite.entity_id));
+  const filterError = locationValidationError || radiusValidationError || locationLookupError;
   const errorMessage = searchParams?.error
     ? decodeURIComponent(searchParams.error)
-    : eventsResult.error || venuesResult.error || favoritesResult.error;
+    : filterError || eventsResult.error || venuesResult.error || favoritesResult.error;
+  const emptyStateMessage =
+    locationParam && geocodedLocation
+      ? `No events found within ${radius} miles of ${resolvedLocationName}. Try expanding the radius or a nearby location.`
+      : 'No approved events yet. Be the first to submit one for review.';
 
   return (
     <>
@@ -237,9 +260,7 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
                     );
                   })
                 ) : (
-                  <p className="text-sm text-slate-400">
-                    No approved events yet. Be the first to submit one for review.
-                  </p>
+                  <p className="text-sm text-slate-400">{emptyStateMessage}</p>
                 )}
               </div>
             </div>
