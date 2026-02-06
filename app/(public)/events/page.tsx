@@ -7,6 +7,7 @@ import { getOptionalUser } from '@/lib/supabase/guards';
 import { getOptionalUserFavorites } from '@/lib/supabase/favorites';
 import { getApprovedEvents } from '@/lib/supabase/events';
 import { getApprovedVenues } from '@/lib/supabase/venues';
+import { geocodeAddress } from '@/lib/mapbox/geocode';
 
 import { toggleEventFavoriteAction } from './actions';
 
@@ -44,6 +45,25 @@ const parseRadius = (value: string) => {
   return parsed;
 };
 
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const getDistanceMiles = (
+  origin: { latitude: number; longitude: number },
+  destination: { latitude: number; longitude: number },
+) => {
+  const earthRadiusMiles = 3958.8;
+  const deltaLat = toRadians(destination.latitude - origin.latitude);
+  const deltaLon = toRadians(destination.longitude - origin.longitude);
+  const originLat = toRadians(origin.latitude);
+  const destinationLat = toRadians(destination.latitude);
+
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(originLat) * Math.cos(destinationLat) * Math.sin(deltaLon / 2) ** 2;
+
+  return 2 * earthRadiusMiles * Math.asin(Math.sqrt(a));
+};
+
 const formatDate = (value: string) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -64,14 +84,43 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
   const events = eventsResult.data ?? [];
   const venues = venuesResult.data ?? [];
   const venueNameById = new Map(venues.map((venue) => [venue.id, venue.name]));
-  const eventIds = events.map((event) => event.id);
-  const eventSchema = buildEventItemListSchema(events, venues);
   const locationParam = normalizeLocation(getSearchParamValue(searchParams?.location));
   const radiusParam = getSearchParamValue(searchParams?.radius);
   const radius = parseRadius(radiusParam);
-  const activeFilterLabel = locationParam
-    ? `Within ${radius} miles of ${locationParam}`
+  let geocodedLocation: Awaited<ReturnType<typeof geocodeAddress>> = null;
+
+  if (locationParam) {
+    try {
+      geocodedLocation = await geocodeAddress(locationParam);
+    } catch {
+      geocodedLocation = null;
+    }
+  }
+
+  const resolvedLocationName = geocodedLocation?.placeName ?? locationParam;
+  const activeFilterLabel = resolvedLocationName
+    ? `Within ${radius} miles of ${resolvedLocationName}`
     : '';
+
+  const venuesById = new Map(venues.map((venue) => [venue.id, venue]));
+  const filteredEvents =
+    locationParam && geocodedLocation
+      ? events.filter((event) => {
+          const venue = venuesById.get(event.venue_id);
+          if (venue?.latitude === null || venue?.longitude === null) {
+            return false;
+          }
+
+          const distance = getDistanceMiles(geocodedLocation, {
+            latitude: venue.latitude,
+            longitude: venue.longitude,
+          });
+
+          return distance <= radius;
+        })
+      : events;
+  const eventIds = filteredEvents.map((event) => event.id);
+  const eventSchema = buildEventItemListSchema(filteredEvents, venues);
   const favoritesResult =
     user && eventIds.length > 0
       ? await getOptionalUserFavorites('EVENT', eventIds)
@@ -133,12 +182,12 @@ export default async function EventsPublicPage({ searchParams }: EventsPublicPag
               <div className="flex items-center justify-between gap-4">
                 <h2 className="font-display text-2xl text-slate-100">Upcoming events</h2>
                 <span className="text-xs uppercase tracking-[0.3em] text-brand-300">
-                  {events.length} listed
+                  {filteredEvents.length} listed
                 </span>
               </div>
               <div className="mt-4 grid gap-4">
-                {events.length > 0 ? (
-                  events.map((event) => {
+                {filteredEvents.length > 0 ? (
+                  filteredEvents.map((event) => {
                     const isFavorited = favoriteIds.has(event.id);
                     return (
                       <article
