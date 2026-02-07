@@ -55,6 +55,8 @@
 - `description` (text)
 - `venue_id` (uuid, refs venues.id)
 - `start_datetime` (timestamptz) -- Specific date and time for this performance
+- `end_datetime` (timestamptz) -- End date and time for this performance
+- `timezone` (text) -- IANA timezone for display and sorting consistency
 - `flyer_image_url` (text)
 - `official_website_url` (text)
 - `classes_details` (text) -- Free text for "Open, Youth, Novice" etc.
@@ -79,8 +81,14 @@
 
 - `id` (uuid, PK)
 - `name` (text)
-- `category` (text) -- e.g., "Farrier"
+- `category` (text) -- Controlled taxonomy slug (e.g., "farrier")
 - `description` (text)
+- `image_url` (text)
+- `contact_name` (text)
+- `contact_email` (text)
+- `specialties` (text)
+- `pricing_details` (text)
+- `availability_notes` (text)
 - `phone` (text)
 - `website_url` (text)
 - `service_radius_miles` (int)

@@ -22,15 +22,24 @@ const statusStyles: Record<string, string> = {
   ARCHIVED: 'border-slate-400/30 bg-slate-500/10 text-slate-100',
 };
 
-const formatDate = (value: string) => {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
+const formatDateRange = (start: string, end: string, timezone: string) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return `${start} - ${end}`;
   }
-  return parsed.toLocaleString('en-US', {
+  const sameDay = startDate.toDateString() === endDate.toDateString();
+  const startDisplay = startDate.toLocaleString('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: timezone,
   });
+  const endDisplay = endDate.toLocaleString('en-US', {
+    dateStyle: sameDay ? undefined : 'medium',
+    timeStyle: 'short',
+    timeZone: timezone,
+  });
+  return `${startDisplay} - ${endDisplay} (${timezone})`;
 };
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
@@ -71,14 +80,26 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         </header>
 
         {errorMessage ? (
-          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-5 py-4 text-sm text-red-100">
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-400/40 bg-red-500/10 px-5 py-4 text-sm text-red-100"
+          >
             {errorMessage}
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
-            {successMessage}
+          <div
+            role="status"
+            className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100"
+          >
+            <p>{successMessage}</p>
+            <Link
+              href="#your-events"
+              className="mt-2 inline-flex text-xs uppercase tracking-[0.2em] text-emerald-100 underline underline-offset-4 transition hover:text-emerald-50"
+            >
+              Jump to submitted events
+            </Link>
           </div>
         ) : null}
 
@@ -95,7 +116,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
             />
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-night-900/70 p-6">
+          <div id="your-events" className="rounded-3xl border border-white/10 bg-night-900/70 p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl text-slate-100">Your events</h2>
               <span className="text-xs uppercase tracking-[0.3em] text-brand-300">
@@ -113,8 +134,12 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
                       <div>
                         <p className="text-sm font-semibold text-slate-100">{event.title}</p>
                         <p className="text-xs text-slate-400">
-                          {formatDate(event.start_datetime)} -{' '}
-                          {venueNameById.get(event.venue_id) ?? event.venue_id}
+                          {formatDateRange(
+                            event.start_datetime,
+                            event.end_datetime ?? event.start_datetime,
+                            event.timezone ?? 'UTC',
+                          )}{' '}
+                          - {venueNameById.get(event.venue_id) ?? event.venue_id}
                         </p>
                       </div>
                       <span

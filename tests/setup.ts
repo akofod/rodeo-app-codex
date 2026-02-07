@@ -43,6 +43,10 @@ vi.mock('mapbox-gl', () => {
     }
     addControl() {}
     fitBounds() {}
+    getZoom() {
+      return 7;
+    }
+    easeTo() {}
     remove() {}
   }
 

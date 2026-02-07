@@ -48,6 +48,7 @@ export default async function MapPage() {
         id: `venue-${venue.id}`,
         type: 'VENUE' as const,
         entityId: venue.id,
+        detailHref: `/venues/${venue.id}`,
         title: venue.name,
         subtitle: `${venue.address_city}, ${venue.address_state}${
           venue.address_country ? `, ${venue.address_country}` : ''
@@ -68,6 +69,7 @@ export default async function MapPage() {
         id: `event-${event.id}`,
         type: 'EVENT' as const,
         entityId: event.id,
+        detailHref: `/events/${event.id}`,
         title: event.title,
         subtitle: `${formatDate(event.start_datetime)} - ${venue.name}`,
         latitude: venue.latitude,
@@ -88,9 +90,9 @@ export default async function MapPage() {
   const errorMessage = eventsResult.error || venuesResult.error || favoritesResult.error;
 
   return (
-    <section className="px-6 py-12 sm:py-16">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <header className="flex flex-col gap-3">
+    <section className="px-6 py-10 sm:py-14 lg:py-16">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10">
+        <header className="flex flex-col gap-4">
           <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Map</p>
           <h1 className="font-display text-3xl text-slate-100 sm:text-4xl">
             Live map of events and venues

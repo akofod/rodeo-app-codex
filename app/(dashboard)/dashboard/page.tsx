@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { signOut } from '@/app/(auth)/actions';
+import { getServiceCategoryLabel } from '@/lib/services/categories';
 import { getUserFavorites } from '@/lib/supabase/favorites';
 import { getProfileByUserId } from '@/lib/supabase/profiles';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -313,7 +314,9 @@ export default async function DashboardPage() {
                       className="rounded-2xl border border-white/10 bg-night-900/70 p-4"
                     >
                       <p className="text-sm font-semibold text-slate-100">{service.name}</p>
-                      <p className="mt-1 text-xs text-slate-400">{service.category}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {getServiceCategoryLabel(service.category)}
+                      </p>
                       <p className="mt-1 text-xs text-slate-500">
                         {service.zip_code} - {service.service_radius_miles} mi radius
                       </p>

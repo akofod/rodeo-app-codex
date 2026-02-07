@@ -4,7 +4,7 @@ import HeaderNav from '@/components/HeaderNav';
 describe('HeaderNav', () => {
   it('renders dashboard first for authenticated users', () => {
     const { container } = render(
-      <HeaderNav isAuthenticated userInitial="A" onSignOut={() => undefined} />,
+      <HeaderNav isAuthenticated userInitial="A" signOutAction={() => undefined} />,
     );
 
     const markup = container.innerHTML;
@@ -13,7 +13,7 @@ describe('HeaderNav', () => {
   });
 
   it('renders sign in link for guests', () => {
-    render(<HeaderNav isAuthenticated={false} userInitial="A" onSignOut={() => undefined} />);
+    render(<HeaderNav isAuthenticated={false} userInitial="A" signOutAction={() => undefined} />);
     expect(screen.getAllByRole('link', { name: /sign in/i }).length).toBeGreaterThan(0);
   });
 });

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 type HeaderNavProps = {
   isAuthenticated: boolean;
   userInitial: string;
-  onSignOut: () => void;
+  signOutAction: ((formData: FormData) => void | Promise<void>) | (() => void | Promise<void>);
 };
 
 const baseNavLinkClass =
@@ -17,12 +17,15 @@ const mobileNavLinkClass =
   'rounded-xl px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate-200 transition hover:bg-white/10';
 const mobileActiveClass = 'bg-white/10 text-brand-100';
 
-export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: HeaderNavProps) {
+export default function HeaderNav({ isAuthenticated, userInitial, signOutAction }: HeaderNavProps) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
     if (!pathname) {
       return false;
+    }
+    if (href === '/sign-in') {
+      return pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/forgot-password';
     }
     if (href === '/') {
       return pathname === '/';
@@ -38,7 +41,7 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
 
   return (
     <nav className="flex items-center gap-3">
-      <div className="hidden items-center gap-3 sm:flex">
+      <div className="hidden items-center gap-3 lg:flex">
         {isAuthenticated ? (
           <>
             <Link
@@ -76,7 +79,7 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
                 </span>
               </summary>
               <div className="absolute right-0 mt-2 min-w-[160px] rounded-2xl border border-white/10 bg-night-900/95 p-2 shadow-glow">
-                <form action={onSignOut}>
+                <form action={signOutAction}>
                   <button
                     type="submit"
                     className="w-full rounded-xl px-3 py-2 text-left text-[11px] uppercase tracking-[0.2em] text-slate-200 transition hover:bg-white/10"
@@ -120,7 +123,7 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
           </>
         )}
       </div>
-      <details className="relative sm:hidden">
+      <details className="relative lg:hidden">
         <summary className="list-none rounded-full border border-white/15 bg-white/5 p-2 text-brand-100 transition hover:border-brand-300 hover:text-brand-50 [&::-webkit-details-marker]:hidden">
           <span className="sr-only">Open menu</span>
           <svg
@@ -169,7 +172,7 @@ export default function HeaderNav({ isAuthenticated, userInitial, onSignOut }: H
                 >
                   Services
                 </Link>
-                <form action={onSignOut}>
+                <form action={signOutAction}>
                   <button
                     type="submit"
                     className="w-full rounded-xl px-3 py-2 text-left text-xs uppercase tracking-[0.2em] text-slate-200 transition hover:bg-white/10"

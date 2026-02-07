@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { AppStatus, Service, ServiceInsert, ServiceUpdate } from '@/types/database';
+import { normalizeServiceCategory } from '@/lib/services/categories';
 
 import { requireSupabaseAdminClient } from './admin';
 import { getOptionalUser, requireAdmin, requireUser } from './guards';
@@ -11,6 +12,12 @@ export type ServiceCreateInput = {
   name: string;
   category: string;
   description?: string | null;
+  image_url?: string | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  specialties?: string | null;
+  pricing_details?: string | null;
+  availability_notes?: string | null;
   phone?: string | null;
   website_url?: string | null;
   service_radius_miles: number;
@@ -29,8 +36,14 @@ const validateServiceInput = (input: ServiceCreateInput): string | null => {
   if (!normalize(input.name)) {
     return 'Service name is required.';
   }
-  if (!normalize(input.category)) {
+  if (!normalize(input.category) || !normalizeServiceCategory(input.category)) {
     return 'Category is required.';
+  }
+  if (!normalize(input.phone ?? '') && !normalize(input.website_url ?? '')) {
+    return 'At least one contact method is required.';
+  }
+  if (input.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.contact_email)) {
+    return 'Contact email must be a valid email address.';
   }
   if (!normalize(input.zip_code)) {
     return 'ZIP code is required.';
@@ -48,13 +61,24 @@ export const createService = async (input: ServiceCreateInput): Promise<DataResu
     return toErrorResult(validationError);
   }
 
+  const normalizedCategory = normalizeServiceCategory(input.category);
+  if (!normalizedCategory) {
+    return toErrorResult('Category is required.');
+  }
+
   try {
     const { supabase, user } = await requireUser();
 
     const payload: ServiceInsert = {
       name: normalize(input.name),
-      category: normalize(input.category),
+      category: normalizedCategory,
       description: input.description?.trim() || null,
+      image_url: input.image_url?.trim() || null,
+      contact_name: input.contact_name?.trim() || null,
+      contact_email: input.contact_email?.trim() || null,
+      specialties: input.specialties?.trim() || null,
+      pricing_details: input.pricing_details?.trim() || null,
+      availability_notes: input.availability_notes?.trim() || null,
       phone: input.phone?.trim() || null,
       website_url: input.website_url?.trim() || null,
       service_radius_miles: input.service_radius_miles,
@@ -84,9 +108,30 @@ export const updateService = async (
     const payload: ServiceUpdate = {};
 
     if (updates.name !== undefined) payload.name = updates.name.trim();
-    if (updates.category !== undefined) payload.category = updates.category.trim();
+    if (updates.category !== undefined) {
+      const normalizedCategory = normalizeServiceCategory(updates.category);
+      if (!normalizedCategory) {
+        return toErrorResult('Category is required.');
+      }
+      payload.category = normalizedCategory;
+    }
     if (updates.description !== undefined)
       payload.description = updates.description?.trim() || null;
+    if (updates.image_url !== undefined) payload.image_url = updates.image_url?.trim() || null;
+    if (updates.contact_name !== undefined)
+      payload.contact_name = updates.contact_name?.trim() || null;
+    if (updates.contact_email !== undefined) {
+      const email = updates.contact_email?.trim() || null;
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return toErrorResult('Contact email must be a valid email address.');
+      }
+      payload.contact_email = email;
+    }
+    if (updates.specialties !== undefined) payload.specialties = updates.specialties?.trim() || null;
+    if (updates.pricing_details !== undefined)
+      payload.pricing_details = updates.pricing_details?.trim() || null;
+    if (updates.availability_notes !== undefined)
+      payload.availability_notes = updates.availability_notes?.trim() || null;
     if (updates.phone !== undefined) payload.phone = updates.phone?.trim() || null;
     if (updates.website_url !== undefined)
       payload.website_url = updates.website_url?.trim() || null;

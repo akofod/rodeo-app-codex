@@ -2,21 +2,36 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 
+import SubmitButton from '@/components/forms/SubmitButton';
+import DraftPersistence from '@/components/forms/DraftPersistence';
+import {
+  DEFAULT_EVENT_TIMEZONE,
+  EVENT_TIMEZONE_OPTIONS,
+  type EventTimezoneValue,
+} from '@/lib/events/timezones';
 import type { Discipline, SanctioningBody, Venue } from '@/types/database';
 
 import { createEventAction } from './actions';
 
 type RecurrenceType = 'NONE' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY_DATE' | 'MONTHLY_DAY' | 'CUSTOM';
+type RecurrenceEndMode = 'DATE' | 'COUNT' | 'NEVER';
 
 type PerformanceEntry = {
   id: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime: string;
 };
 
 type CustomRecurrence = {
   id: string;
   date: string;
+};
+
+type ClassDivisionEntry = {
+  id: string;
+  className: string;
+  divisionName: string;
 };
 
 type VenueMode = 'EXISTING' | 'NEW';
@@ -60,11 +75,14 @@ const createPerformance = (id: string, date?: Date): PerformanceEntry => {
   const roundedMinutes = roundToQuarterHour(base.getMinutes());
   const roundedDate = new Date(base);
   roundedDate.setMinutes(roundedMinutes, 0, 0);
+  const roundedEnd = new Date(roundedDate);
+  roundedEnd.setHours(roundedEnd.getHours() + 2);
 
   return {
     id,
     date: formatDateValue(roundedDate),
-    time: formatTimeValue(roundedDate),
+    startTime: formatTimeValue(roundedDate),
+    endTime: formatTimeValue(roundedEnd),
   };
 };
 
@@ -75,6 +93,12 @@ const createCustomRecurrence = (id: string, date?: Date): CustomRecurrence => {
     date: formatDateValue(base),
   };
 };
+
+const createClassDivision = (id: string): ClassDivisionEntry => ({
+  id,
+  className: '',
+  divisionName: '',
+});
 
 const parseLocalDateTime = (date: string, time: string) => {
   if (!date || !time) {
@@ -93,7 +117,7 @@ const parseLocalDateTime = (date: string, time: string) => {
 
 const getBaseStartDate = (performances: PerformanceEntry[]) => {
   const baseDates = performances
-    .map((performance) => parseLocalDateTime(performance.date, performance.time))
+    .map((performance) => parseLocalDateTime(performance.date, performance.startTime))
     .filter((value): value is Date => Boolean(value))
     .sort((left, right) => left.getTime() - right.getTime());
 
@@ -131,32 +155,51 @@ const getNthWeekdayOfMonth = (year: number, monthIndex: number, weekday: number,
   return day;
 };
 
+type OccurrenceEntry = {
+  start: Date;
+  end: Date;
+};
+
 const buildOccurrences = (
   performances: PerformanceEntry[],
   recurrenceType: RecurrenceType,
+  recurrenceInterval: number,
+  recurrenceEndMode: RecurrenceEndMode,
   recurrenceEndDate: string,
+  recurrenceCount: number,
   customRecurrenceDates: string[],
 ) => {
-  const baseDates = performances
-    .map((performance) => parseLocalDateTime(performance.date, performance.time))
-    .filter((value): value is Date => Boolean(value));
+  const baseSchedules = performances
+    .map((performance) => {
+      const start = parseLocalDateTime(performance.date, performance.startTime);
+      const end = parseLocalDateTime(performance.date, performance.endTime);
+      if (!start || !end || end <= start) {
+        return null;
+      }
+      return { start, end };
+    })
+    .filter((value): value is OccurrenceEntry => Boolean(value));
 
-  if (baseDates.length === 0) {
+  if (baseSchedules.length === 0) {
     return [];
   }
 
-  const baseStart = baseDates.reduce(
-    (earliest, current) => (current < earliest ? current : earliest),
-    baseDates[0],
+  const baseStart = baseSchedules.reduce(
+    (earliest, current) => (current.start < earliest ? current.start : earliest),
+    baseSchedules[0].start,
   );
-  const scheduleOffsets = baseDates.map((date) => date.getTime() - baseStart.getTime());
+  const scheduleOffsets = baseSchedules.map((schedule) => ({
+    startOffset: schedule.start.getTime() - baseStart.getTime(),
+    endOffset: schedule.end.getTime() - baseStart.getTime(),
+  }));
   const startDates = [baseStart];
-  const uniqueDates = new Map<string, Date>();
+  const uniqueDates = new Map<string, OccurrenceEntry>();
 
   const pushSchedule = (startDate: Date) => {
     scheduleOffsets.forEach((offset) => {
-      const occurrence = new Date(startDate.getTime() + offset);
-      uniqueDates.set(occurrence.toISOString(), occurrence);
+      const start = new Date(startDate.getTime() + offset.startOffset);
+      const end = new Date(startDate.getTime() + offset.endOffset);
+      uniqueDates.set(`${start.toISOString()}::${end.toISOString()}`, { start, end });
     });
   };
 
@@ -168,25 +211,42 @@ const buildOccurrences = (
       .forEach((date) => startDates.push(date));
 
     startDates.forEach(pushSchedule);
-    return Array.from(uniqueDates.values()).sort((left, right) => left.getTime() - right.getTime());
+    return Array.from(uniqueDates.values()).sort(
+      (left, right) => left.start.getTime() - right.start.getTime(),
+    );
   }
 
   if (recurrenceType === 'NONE') {
     startDates.forEach(pushSchedule);
-    return Array.from(uniqueDates.values()).sort((left, right) => left.getTime() - right.getTime());
+    return Array.from(uniqueDates.values()).sort(
+      (left, right) => left.start.getTime() - right.start.getTime(),
+    );
   }
 
   const endDate = getEndOfDay(recurrenceEndDate);
 
-  if (!endDate) {
+  if (recurrenceEndMode === 'DATE' && !endDate) {
     startDates.forEach(pushSchedule);
-    return Array.from(uniqueDates.values()).sort((left, right) => left.getTime() - right.getTime());
+    return Array.from(uniqueDates.values()).sort(
+      (left, right) => left.start.getTime() - right.start.getTime(),
+    );
   }
 
+  const maxSeriesCount =
+    recurrenceEndMode === 'COUNT'
+      ? Math.max(1, recurrenceCount)
+      : recurrenceEndMode === 'NEVER'
+        ? 52
+        : Number.POSITIVE_INFINITY;
+
   if (recurrenceType === 'WEEKLY' || recurrenceType === 'BIWEEKLY') {
-    const step = recurrenceType === 'WEEKLY' ? 7 : 14;
+    const baseStep = recurrenceType === 'WEEKLY' ? 7 : 14;
+    const step = Math.max(1, recurrenceInterval) * baseStep;
     let next = addDays(baseStart, step);
-    while (next <= endDate) {
+    while (
+      startDates.length < maxSeriesCount &&
+      (recurrenceEndMode !== 'DATE' || (endDate && next <= endDate))
+    ) {
       startDates.push(next);
       next = addDays(next, step);
     }
@@ -200,16 +260,19 @@ const buildOccurrences = (
     const minutes = baseStart.getMinutes();
 
     while (true) {
-      month += 1;
+      month += Math.max(1, recurrenceInterval);
       if (month > 11) {
-        month = 0;
-        year += 1;
+        year += Math.floor(month / 12);
+        month %= 12;
       }
       const candidate = new Date(year, month, day, hours, minutes, 0, 0);
       if (candidate.getMonth() !== month) {
         continue;
       }
-      if (candidate > endDate) {
+      if (
+        startDates.length >= maxSeriesCount ||
+        (recurrenceEndMode === 'DATE' && endDate && candidate > endDate)
+      ) {
         break;
       }
       startDates.push(candidate);
@@ -225,10 +288,10 @@ const buildOccurrences = (
     const minutes = baseStart.getMinutes();
 
     while (true) {
-      month += 1;
+      month += Math.max(1, recurrenceInterval);
       if (month > 11) {
-        month = 0;
-        year += 1;
+        year += Math.floor(month / 12);
+        month %= 12;
       }
 
       const day = getNthWeekdayOfMonth(year, month, weekday, nth);
@@ -237,7 +300,10 @@ const buildOccurrences = (
       }
 
       const candidate = new Date(year, month, day, hours, minutes, 0, 0);
-      if (candidate > endDate) {
+      if (
+        startDates.length >= maxSeriesCount ||
+        (recurrenceEndMode === 'DATE' && endDate && candidate > endDate)
+      ) {
         break;
       }
 
@@ -247,7 +313,9 @@ const buildOccurrences = (
 
   startDates.forEach(pushSchedule);
 
-  return Array.from(uniqueDates.values()).sort((left, right) => left.getTime() - right.getTime());
+  return Array.from(uniqueDates.values()).sort(
+    (left, right) => left.start.getTime() - right.start.getTime(),
+  );
 };
 
 type DateTimeFieldProps = {
@@ -255,43 +323,79 @@ type DateTimeFieldProps = {
   value: PerformanceEntry;
   onChange: (value: PerformanceEntry) => void;
   onRemove?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 };
 
-const DateTimeField = ({ label, value, onChange, onRemove }: DateTimeFieldProps) => (
+const DateTimeField = ({
+  label,
+  value,
+  onChange,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: DateTimeFieldProps) => (
   <div className="rounded-2xl border border-white/10 bg-night-900/70 p-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="text-sm font-semibold text-slate-100">{label}</p>
-      {onRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-100"
-        >
-          Remove
-        </button>
-      ) : null}
+      <div className="flex items-center gap-2">
+        {onMoveUp ? (
+          <button
+            type="button"
+            onClick={onMoveUp}
+            className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-300 transition hover:border-brand-300/40 hover:text-brand-100"
+          >
+            Up
+          </button>
+        ) : null}
+        {onMoveDown ? (
+          <button
+            type="button"
+            onClick={onMoveDown}
+            className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-300 transition hover:border-brand-300/40 hover:text-brand-100"
+          >
+            Down
+          </button>
+        ) : null}
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-300 transition hover:border-red-300/40 hover:text-red-200"
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
     </div>
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       <label className="grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-        Date
+        Start
         <input
-          type="date"
-          id={`${value.id}-date`}
-          name={`performance_date_${value.id}`}
-          value={value.date}
-          onChange={(event) => onChange({ ...value, date: event.target.value })}
+          type="datetime-local"
+          id={`${value.id}-start`}
+          name={`performance_start_${value.id}`}
+          value={`${value.date}T${value.startTime}`}
+          step={900}
+          onChange={(event) => {
+            const [date, time] = event.target.value.split('T');
+            onChange({ ...value, date: date ?? value.date, startTime: time ?? value.startTime });
+          }}
           className={dateTimeInputClass}
         />
       </label>
       <label className="grid gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-        Time
+        End
         <input
-          type="time"
-          id={`${value.id}-time`}
-          name={`performance_time_${value.id}`}
-          value={value.time}
+          type="datetime-local"
+          id={`${value.id}-end`}
+          name={`performance_end_${value.id}`}
+          value={`${value.date}T${value.endTime}`}
           step={900}
-          onChange={(event) => onChange({ ...value, time: event.target.value })}
+          onChange={(event) => {
+            const [, time] = event.target.value.split('T');
+            onChange({ ...value, endTime: time ?? value.endTime });
+          }}
           className={dateTimeInputClass}
         />
       </label>
@@ -303,6 +407,7 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
   const idPrefix = useId();
   const idCounter = useRef(0);
   const customRecurrenceCounter = useRef(0);
+  const classDivisionCounter = useRef(0);
   const nextPerformanceId = () => {
     idCounter.current += 1;
     return `${idPrefix}-performance-${idCounter.current}`;
@@ -311,19 +416,31 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
     customRecurrenceCounter.current += 1;
     return `${idPrefix}-custom-recurrence-${customRecurrenceCounter.current}`;
   };
+  const nextClassDivisionId = () => {
+    classDivisionCounter.current += 1;
+    return `${idPrefix}-class-division-${classDivisionCounter.current}`;
+  };
   const [performances, setPerformances] = useState<PerformanceEntry[]>(() => [
     createPerformance(nextPerformanceId()),
   ]);
   const [venueQuery, setVenueQuery] = useState('');
+  const [newVenueName, setNewVenueName] = useState('');
   const [venueMode, setVenueMode] = useState<VenueMode>('EXISTING');
   const [selectedVenueId, setSelectedVenueId] = useState('');
   const [isVenueListOpen, setIsVenueListOpen] = useState(false);
   const [activeVenueIndex, setActiveVenueIndex] = useState<number | null>(null);
   const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('WEEKLY');
+  const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+  const [recurrenceEndMode, setRecurrenceEndMode] = useState<RecurrenceEndMode>('DATE');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [recurrenceCount, setRecurrenceCount] = useState(12);
   const [recurrenceNote, setRecurrenceNote] = useState('');
+  const [eventTimezone, setEventTimezone] = useState(DEFAULT_EVENT_TIMEZONE);
   const [customRecurrences, setCustomRecurrences] = useState<CustomRecurrence[]>([]);
+  const [classDivisions, setClassDivisions] = useState<ClassDivisionEntry[]>(() => [
+    createClassDivision(nextClassDivisionId()),
+  ]);
   const [selectedDisciplines, setSelectedDisciplines] = useState<number[]>([]);
   const [selectedSanctions, setSelectedSanctions] = useState<number[]>([]);
   const [clientError, setClientError] = useState<string | null>(null);
@@ -357,6 +474,23 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
     () => venues.find((venue) => venue.id === selectedVenueId) ?? null,
     [venues, selectedVenueId],
   );
+  const serializedClassesDetails = useMemo(
+    () =>
+      classDivisions
+        .map((entry) => ({
+          className: entry.className.trim(),
+          divisionName: entry.divisionName.trim(),
+        }))
+        .filter((entry) => entry.className || entry.divisionName)
+        .map(
+          (entry) =>
+            `${entry.className || 'Unspecified class'}${
+              entry.divisionName ? ` - ${entry.divisionName}` : ''
+            }`,
+        )
+        .join('\n'),
+    [classDivisions],
+  );
 
   const effectiveRecurrenceType = recurrenceEnabled ? recurrenceType : 'NONE';
   const occurrences = useMemo(
@@ -364,10 +498,21 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
       buildOccurrences(
         performances,
         effectiveRecurrenceType,
+        recurrenceInterval,
+        recurrenceEndMode,
         recurrenceEndDate,
+        recurrenceCount,
         customRecurrences.map((recurrence) => recurrence.date),
       ),
-    [performances, effectiveRecurrenceType, recurrenceEndDate, customRecurrences],
+    [
+      performances,
+      effectiveRecurrenceType,
+      recurrenceInterval,
+      recurrenceEndMode,
+      recurrenceEndDate,
+      recurrenceCount,
+      customRecurrences,
+    ],
   );
 
   const handlePerformanceChange = (entry: PerformanceEntry) => {
@@ -382,6 +527,23 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
 
   const handleRemovePerformance = (id: string) => {
     setPerformances((current) => current.filter((performance) => performance.id !== id));
+  };
+
+  const handleMovePerformance = (id: string, direction: -1 | 1) => {
+    setPerformances((current) => {
+      const index = current.findIndex((performance) => performance.id === id);
+      if (index === -1) {
+        return current;
+      }
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= current.length) {
+        return current;
+      }
+      const next = [...current];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
   };
 
   const handleAddCustomRecurrence = () => {
@@ -399,6 +561,18 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
     setCustomRecurrences((current) =>
       current.map((recurrence) => (recurrence.id === entry.id ? entry : recurrence)),
     );
+  };
+
+  const handleClassDivisionChange = (entry: ClassDivisionEntry) => {
+    setClassDivisions((current) => current.map((item) => (item.id === entry.id ? entry : item)));
+  };
+
+  const handleAddClassDivision = () => {
+    setClassDivisions((current) => [...current, createClassDivision(nextClassDivisionId())]);
+  };
+
+  const handleRemoveClassDivision = (id: string) => {
+    setClassDivisions((current) => current.filter((entry) => entry.id !== id));
   };
 
   const handleVenueInputChange = (value: string) => {
@@ -420,6 +594,7 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
   const handleSelectNewVenue = () => {
     setSelectedVenueId('');
     setVenueMode('NEW');
+    setNewVenueName(venueQuery.trim());
     setIsVenueListOpen(false);
     setActiveVenueIndex(null);
   };
@@ -454,6 +629,20 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     setClientError(null);
+    const formData = new FormData(event.currentTarget);
+    const flyerImageUrl = String(formData.get('flyer_image_url') ?? '').trim();
+    const officialWebsiteUrl = String(formData.get('official_website_url') ?? '').trim();
+    const isValidUrl = (value: string) => {
+      if (!value) {
+        return true;
+      }
+      try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+      } catch {
+        return false;
+      }
+    };
 
     if (venueMode === 'EXISTING' && !selectedVenueId) {
       setClientError('Select a venue or add a new one before submitting.');
@@ -467,14 +656,34 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
       return;
     }
 
+    if (venueMode === 'NEW' && !newVenueName.trim()) {
+      setClientError('Enter a venue name before submitting.');
+      event.preventDefault();
+      return;
+    }
+
+    if (!isValidUrl(flyerImageUrl) || !isValidUrl(officialWebsiteUrl)) {
+      setClientError('Use full URLs starting with https:// or http:// for flyer and website.');
+      event.preventDefault();
+      return;
+    }
+
     if (performances.length === 0) {
       setClientError('Add at least one performance date and time.');
       event.preventDefault();
       return;
     }
 
-    const latestBase = performances
-      .map((performance) => parseLocalDateTime(performance.date, performance.time))
+    const scheduleRanges = performances
+      .map((performance) => ({
+        start: parseLocalDateTime(performance.date, performance.startTime),
+        end: parseLocalDateTime(performance.date, performance.endTime),
+      }))
+      .filter(
+        (range): range is { start: Date; end: Date } => Boolean(range.start) && Boolean(range.end),
+      );
+    const latestBase = scheduleRanges
+      .map((range) => range.start)
       .filter((value): value is Date => Boolean(value))
       .sort((left, right) => right.getTime() - left.getTime())[0];
 
@@ -483,10 +692,23 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
       event.preventDefault();
       return;
     }
+    const hasInvalidPerformanceRange = scheduleRanges.some((range) => range.end <= range.start);
+    if (hasInvalidPerformanceRange) {
+      setClientError('Each performance must end after it starts.');
+      event.preventDefault();
+      return;
+    }
+
+    if (recurrenceEnabled && effectiveRecurrenceType !== 'CUSTOM' && recurrenceInterval < 1) {
+      setClientError('Recurrence interval must be at least 1.');
+      event.preventDefault();
+      return;
+    }
 
     if (
-      effectiveRecurrenceType !== 'NONE' &&
+      recurrenceEnabled &&
       effectiveRecurrenceType !== 'CUSTOM' &&
+      recurrenceEndMode === 'DATE' &&
       !recurrenceEndDate
     ) {
       setClientError('Select an end date for the recurrence.');
@@ -494,7 +716,18 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
       return;
     }
 
-    if (recurrenceEnabled && recurrenceEndDate) {
+    if (
+      recurrenceEnabled &&
+      effectiveRecurrenceType !== 'CUSTOM' &&
+      recurrenceEndMode === 'COUNT' &&
+      (!Number.isInteger(recurrenceCount) || recurrenceCount < 1)
+    ) {
+      setClientError('Occurrence count must be at least 1.');
+      event.preventDefault();
+      return;
+    }
+
+    if (recurrenceEnabled && recurrenceEndMode === 'DATE' && recurrenceEndDate) {
       const endDate = getEndOfDay(recurrenceEndDate);
       if (!endDate) {
         setClientError('Select a valid recurrence end date.');
@@ -517,153 +750,261 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
 
   return (
     <form action={createEventAction} onSubmit={handleSubmit} className="mt-6 grid gap-6">
+      <DraftPersistence
+        storageKey="event-form-draft"
+        fieldNames={[
+          'title',
+          'timezone',
+          'venue_mode',
+          'venue_name',
+          'venue_address_street',
+          'venue_address_city',
+          'venue_address_state',
+          'venue_address_zip',
+          'venue_address_country',
+          'venue_website_url',
+          'description',
+          'classes_details',
+          'flyer_image_url',
+          'official_website_url',
+          'manual_disciplines',
+          'manual_sanctions',
+        ]}
+      />
+      <p className="text-xs text-slate-300">
+        Draft fields are saved in this browser while you complete the form.
+      </p>
       {clientError ? (
         <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
           {clientError}
         </div>
       ) : null}
 
-      <label className="grid gap-2 text-sm text-slate-300">
-        Event title
-        <input
-          type="text"
-          name="title"
-          required
-          className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-        />
-      </label>
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-200">Core information</p>
+        <p className="text-sm text-slate-300">Set the event name and base timezone.</p>
+      </div>
 
-      <div className="grid gap-2 text-sm text-slate-300">
-        <label className="grid gap-2">
-          Venue
-          <div className="relative">
-            <input
-              type="text"
-              name="venue_name"
-              value={venueQuery}
-              onChange={(event) => handleVenueInputChange(event.target.value)}
-              onFocus={() => setIsVenueListOpen(true)}
-              onBlur={() => {
-                window.setTimeout(() => setIsVenueListOpen(false), 150);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                  event.preventDefault();
-                  if (!isVenueListOpen) {
-                    setIsVenueListOpen(true);
-                  }
-                  const maxIndex = venueOptions.length;
-                  if (maxIndex === 0) {
+      <div className="grid gap-4 rounded-2xl border border-white/10 bg-night-900/60 p-4">
+        <label className="grid gap-2 text-sm text-slate-200">
+          Event title (required)
+          <input
+            type="text"
+            name="title"
+            required
+            className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm text-slate-200">
+          Event timezone (required)
+          <select
+            name="timezone"
+            required
+            value={eventTimezone}
+            onChange={(event) => setEventTimezone(event.target.value as EventTimezoneValue)}
+            className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+          >
+            {EVENT_TIMEZONE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-200">Venue</p>
+        <p className="text-sm text-slate-300">
+          Select an approved venue or create a new one alongside this submission.
+        </p>
+      </div>
+
+      <div className="grid gap-2 text-sm text-slate-200">
+        <div className="rounded-2xl border border-white/10 bg-night-900/60 p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Venue source</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-night-900/70 px-3 py-2 text-sm text-slate-200">
+              <input
+                type="radio"
+                name="venue_mode"
+                value="EXISTING"
+                checked={venueMode === 'EXISTING'}
+                onChange={() => setVenueMode('EXISTING')}
+                className="h-4 w-4 accent-brand-400"
+              />
+              Use approved venue
+            </label>
+            <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-night-900/70 px-3 py-2 text-sm text-slate-200">
+              <input
+                type="radio"
+                name="venue_mode"
+                value="NEW"
+                checked={venueMode === 'NEW'}
+                onChange={() => {
+                  setVenueMode('NEW');
+                  setNewVenueName(venueQuery.trim());
+                }}
+                className="h-4 w-4 accent-brand-400"
+              />
+              Create new venue
+            </label>
+          </div>
+        </div>
+
+        {venueMode === 'EXISTING' ? (
+          <label className="grid gap-2">
+            Venue (required)
+            <div className="relative">
+              <input
+                type="text"
+                value={venueQuery}
+                onChange={(event) => handleVenueInputChange(event.target.value)}
+                onFocus={() => setIsVenueListOpen(true)}
+                onBlur={() => {
+                  window.setTimeout(() => setIsVenueListOpen(false), 150);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    if (!isVenueListOpen) {
+                      setIsVenueListOpen(true);
+                    }
+                    const maxIndex = venueOptions.length;
+                    if (maxIndex === 0) {
+                      return;
+                    }
+                    setActiveVenueIndex((current) => {
+                      if (current === null) {
+                        return event.key === 'ArrowUp' ? maxIndex - 1 : 0;
+                      }
+                      if (event.key === 'ArrowDown') {
+                        return (current + 1) % maxIndex;
+                      }
+                      return (current - 1 + maxIndex) % maxIndex;
+                    });
                     return;
                   }
-                  setActiveVenueIndex((current) => {
-                    if (current === null) {
-                      return event.key === 'ArrowUp' ? maxIndex - 1 : 0;
-                    }
-                    if (event.key === 'ArrowDown') {
-                      return (current + 1) % maxIndex;
-                    }
-                    return (current - 1 + maxIndex) % maxIndex;
-                  });
-                  return;
-                }
 
-                if (event.key === 'Enter' && isVenueListOpen) {
-                  event.preventDefault();
-                  if (venueOptions.length === 0) {
+                  if (event.key === 'Enter' && isVenueListOpen) {
+                    event.preventDefault();
+                    if (venueOptions.length === 0) {
+                      return;
+                    }
+                    const index = activeVenueIndex ?? 0;
+                    const option = venueOptions[index];
+                    if (option?.type === 'venue') {
+                      handleSelectVenue(option.venue);
+                    } else {
+                      handleSelectNewVenue();
+                    }
                     return;
                   }
-                  const index = activeVenueIndex ?? 0;
-                  const option = venueOptions[index];
-                  if (option?.type === 'venue') {
-                    handleSelectVenue(option.venue);
-                  } else {
-                    handleSelectNewVenue();
-                  }
-                  return;
-                }
 
-                if (event.key === 'Escape') {
-                  setIsVenueListOpen(false);
-                  setActiveVenueIndex(null);
+                  if (event.key === 'Escape') {
+                    setIsVenueListOpen(false);
+                    setActiveVenueIndex(null);
+                  }
+                }}
+                role="combobox"
+                aria-expanded={isVenueListOpen}
+                aria-controls={venueListId}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  activeVenueIndex !== null
+                    ? `${venueListId}-option-${activeVenueIndex}`
+                    : undefined
                 }
-              }}
-              role="combobox"
-              aria-expanded={isVenueListOpen}
-              aria-controls={venueListId}
-              aria-autocomplete="list"
-              aria-activedescendant={
-                activeVenueIndex !== null ? `${venueListId}-option-${activeVenueIndex}` : undefined
-              }
-              placeholder="Search venues or add a new one"
-              className="w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-            />
-            <input type="hidden" name="venue_id" value={selectedVenueId} />
-            <input type="hidden" name="venue_mode" value={venueMode} />
-            {isVenueListOpen ? (
-              <div
-                id={venueListId}
-                role="listbox"
-                className="absolute z-10 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-night-900/95 shadow-glow"
-              >
-                {filteredVenues.length === 0 ? (
-                  <div className="px-4 py-3 text-xs text-slate-400">No matching venues yet.</div>
-                ) : null}
-                <div className="max-h-64 overflow-auto">
-                  {venueOptions.map((option, index) => {
-                    const isActive = index === activeVenueIndex;
-                    const baseClass =
-                      'flex w-full flex-col gap-1 px-4 py-3 text-left text-sm transition';
-                    const activeClass = isActive ? 'bg-white/10' : 'hover:bg-white/10';
-                    if (option.type === 'venue') {
+                placeholder="Search approved venues"
+                className="w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+              />
+              <input type="hidden" name="venue_id" value={selectedVenueId} />
+              {isVenueListOpen ? (
+                <div
+                  id={venueListId}
+                  role="listbox"
+                  className="absolute z-10 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-night-900/95 shadow-glow"
+                >
+                  {filteredVenues.length === 0 ? (
+                    <div className="px-4 py-3 text-xs text-slate-400">No matching venues yet.</div>
+                  ) : null}
+                  <div className="max-h-64 overflow-auto">
+                    {venueOptions.map((option, index) => {
+                      const isActive = index === activeVenueIndex;
+                      const baseClass =
+                        'flex w-full flex-col gap-1 px-4 py-3 text-left text-sm transition';
+                      const activeClass = isActive ? 'bg-white/10' : 'hover:bg-white/10';
+                      if (option.type === 'venue') {
+                        return (
+                          <button
+                            key={option.venue.id}
+                            id={`${venueListId}-option-${index}`}
+                            type="button"
+                            role="option"
+                            aria-selected={isActive}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onMouseEnter={() => setActiveVenueIndex(index)}
+                            onClick={() => handleSelectVenue(option.venue)}
+                            className={`${baseClass} border-b border-white/5 text-slate-200 ${activeClass}`}
+                          >
+                            <span className="font-semibold text-slate-100">
+                              {option.venue.name}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              {formatVenueAddress(option.venue)}
+                            </span>
+                          </button>
+                        );
+                      }
+
                       return (
                         <button
-                          key={option.venue.id}
+                          key="venue-option-new"
                           id={`${venueListId}-option-${index}`}
                           type="button"
                           role="option"
                           aria-selected={isActive}
                           onMouseDown={(event) => event.preventDefault()}
                           onMouseEnter={() => setActiveVenueIndex(index)}
-                          onClick={() => handleSelectVenue(option.venue)}
-                          className={`${baseClass} border-b border-white/5 text-slate-200 ${activeClass}`}
+                          onClick={handleSelectNewVenue}
+                          className={`${baseClass} text-brand-100 ${activeClass}`}
                         >
-                          <span className="font-semibold text-slate-100">{option.venue.name}</span>
+                          <span className="font-semibold">
+                            {venueQuery.trim()
+                              ? `Create "${venueQuery.trim()}" as a new venue`
+                              : 'Create a new venue'}
+                          </span>
                           <span className="text-xs text-slate-400">
-                            {formatVenueAddress(option.venue)}
+                            Use the Create new venue mode for a full venue submission.
                           </span>
                         </button>
                       );
-                    }
-
-                    return (
-                      <button
-                        key="venue-option-new"
-                        id={`${venueListId}-option-${index}`}
-                        type="button"
-                        role="option"
-                        aria-selected={isActive}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onMouseEnter={() => setActiveVenueIndex(index)}
-                        onClick={handleSelectNewVenue}
-                        className={`${baseClass} text-brand-100 ${activeClass}`}
-                      >
-                        <span className="font-semibold">
-                          {venueQuery.trim()
-                            ? `Add "${venueQuery.trim()}" as a new venue`
-                            : 'Add a new venue'}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          Submit a venue for approval if it is not listed yet.
-                        </span>
-                      </button>
-                    );
-                  })}
+                    })}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
-        </label>
+              ) : null}
+            </div>
+          </label>
+        ) : null}
+
+        {venueMode === 'NEW' ? (
+          <label className="grid gap-2">
+            New venue name (required)
+            <input
+              type="text"
+              name="venue_name"
+              required={venueMode === 'NEW'}
+              value={newVenueName}
+              onChange={(event) => {
+                setNewVenueName(event.target.value);
+                setVenueQuery(event.target.value);
+              }}
+              placeholder="e.g., Heath Rodeo Arena"
+              className="w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+            />
+          </label>
+        ) : null}
 
         {selectedVenue && venueMode === 'EXISTING' ? (
           <p className="text-xs text-slate-400">
@@ -750,6 +1091,11 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
         </div>
       ) : null}
 
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-200">Schedule</p>
+        <p className="text-sm text-slate-300">Add performance blocks, recurrence, and ordering.</p>
+      </div>
+
       <div className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -771,6 +1117,12 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
               label={`Performance ${index + 1}`}
               value={performance}
               onChange={handlePerformanceChange}
+              onMoveUp={index > 0 ? () => handleMovePerformance(performance.id, -1) : undefined}
+              onMoveDown={
+                index < performances.length - 1
+                  ? () => handleMovePerformance(performance.id, 1)
+                  : undefined
+              }
               onRemove={
                 performances.length > 1 ? () => handleRemovePerformance(performance.id) : undefined
               }
@@ -805,7 +1157,11 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
               const enabled = event.target.checked;
               setRecurrenceEnabled(enabled);
               if (!enabled) {
+                setRecurrenceType('WEEKLY');
+                setRecurrenceInterval(1);
+                setRecurrenceEndMode('DATE');
                 setRecurrenceEndDate('');
+                setRecurrenceCount(12);
               }
             }}
             className="h-4 w-4 accent-brand-400"
@@ -814,35 +1170,111 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
         </label>
 
         {recurrenceEnabled ? (
-          <label className="grid gap-2 text-sm text-slate-300">
-            Recurrence pattern
-            <select
-              name="recurrence_type"
-              value={recurrenceType}
-              onChange={(event) => setRecurrenceType(event.target.value as RecurrenceType)}
-              className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-            >
-              <option value="WEEKLY">Weekly</option>
-              <option value="BIWEEKLY">Every two weeks</option>
-              <option value="MONTHLY_DATE">Monthly on the same date</option>
-              <option value="MONTHLY_DAY">Monthly on the same weekday</option>
-              <option value="CUSTOM">Custom (manual schedule)</option>
-            </select>
-          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm text-slate-300">
+              Recurrence pattern
+              <select
+                name="recurrence_type"
+                value={recurrenceType}
+                onChange={(event) => {
+                  const nextType = event.target.value as RecurrenceType;
+                  setRecurrenceType(nextType);
+                  if (nextType === 'CUSTOM') {
+                    setRecurrenceEndMode('NEVER');
+                    setRecurrenceEndDate('');
+                  } else if (recurrenceEndMode === 'NEVER') {
+                    setRecurrenceEndMode('DATE');
+                  }
+                }}
+                className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+              >
+                <option value="WEEKLY">Weekly</option>
+                <option value="BIWEEKLY">Every two weeks</option>
+                <option value="MONTHLY_DATE">Monthly on the same date</option>
+                <option value="MONTHLY_DAY">Monthly on the same weekday</option>
+                <option value="CUSTOM">Custom (manual schedule)</option>
+              </select>
+            </label>
+
+            {recurrenceType !== 'CUSTOM' ? (
+              <label className="grid gap-2 text-sm text-slate-300">
+                Repeat interval
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    max={52}
+                    step={1}
+                    name="recurrence_interval"
+                    value={recurrenceInterval}
+                    onChange={(event) =>
+                      setRecurrenceInterval(
+                        Number.parseInt(event.target.value || '1', 10) || recurrenceInterval,
+                      )
+                    }
+                    className="w-24 rounded-xl border border-white/10 bg-night-900/70 px-3 py-2 text-slate-100"
+                  />
+                  <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    {recurrenceType === 'MONTHLY_DATE' || recurrenceType === 'MONTHLY_DAY'
+                      ? 'month(s)'
+                      : 'cycle(s)'}
+                  </span>
+                </div>
+              </label>
+            ) : null}
+          </div>
         ) : null}
 
         {recurrenceEnabled && recurrenceType !== 'CUSTOM' ? (
-          <label className="grid gap-2 text-sm text-slate-300">
-            Recurrence end date
-            <input
-              type="date"
-              id={`${idPrefix}-recurrence-end`}
-              name="recurrence_end_date"
-              value={recurrenceEndDate}
-              onChange={(event) => setRecurrenceEndDate(event.target.value)}
-              className={dateTimeInputClass}
-            />
-          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm text-slate-300">
+              Recurrence ends
+              <select
+                name="recurrence_end_mode"
+                value={recurrenceEndMode}
+                onChange={(event) => setRecurrenceEndMode(event.target.value as RecurrenceEndMode)}
+                className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+              >
+                <option value="DATE">On date</option>
+                <option value="COUNT">After number of occurrences</option>
+                <option value="NEVER">No end (limit applied)</option>
+              </select>
+            </label>
+
+            {recurrenceEndMode === 'DATE' ? (
+              <label className="grid gap-2 text-sm text-slate-300">
+                Recurrence end date
+                <input
+                  type="date"
+                  id={`${idPrefix}-recurrence-end`}
+                  name="recurrence_end_date"
+                  value={recurrenceEndDate}
+                  onChange={(event) => setRecurrenceEndDate(event.target.value)}
+                  className={dateTimeInputClass}
+                />
+              </label>
+            ) : null}
+
+            {recurrenceEndMode === 'COUNT' ? (
+              <label className="grid gap-2 text-sm text-slate-300">
+                Number of occurrences
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  step={1}
+                  name="recurrence_count"
+                  value={recurrenceCount}
+                  onChange={(event) =>
+                    setRecurrenceCount(
+                      Number.parseInt(event.target.value || '1', 10) || recurrenceCount,
+                    )
+                  }
+                  className={dateTimeInputClass}
+                />
+              </label>
+            ) : null}
+          </div>
         ) : null}
 
         {recurrenceEnabled && recurrenceType === 'CUSTOM' ? (
@@ -914,54 +1346,116 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
       </div>
 
       {occurrences.map((occurrence) => (
-        <input
-          key={occurrence.toISOString()}
-          type="hidden"
-          name="occurrence"
-          value={occurrence.toISOString()}
-        />
+        <div key={`${occurrence.start.toISOString()}-${occurrence.end.toISOString()}`}>
+          <input type="hidden" name="occurrence_start" value={occurrence.start.toISOString()} />
+          <input type="hidden" name="occurrence_end" value={occurrence.end.toISOString()} />
+        </div>
       ))}
 
-      <div className="grid gap-2 text-sm text-slate-300">
-        Description (optional)
-        <textarea
-          name="description"
-          rows={3}
-          className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-        />
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-200">Details and media</p>
+        <p className="text-sm text-slate-300">
+          Add optional context, classes, and external media links.
+        </p>
       </div>
 
-      <div className="grid gap-2 text-sm text-slate-300">
-        Classes/Divisions (optional)
-        <textarea
-          name="classes_details"
-          rows={2}
-          className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-        />
+      <div className="grid gap-4 rounded-2xl border border-white/10 bg-night-900/60 p-4">
+        <label className="grid gap-2 text-sm text-slate-200">
+          Description (optional)
+          <textarea
+            name="description"
+            rows={3}
+            className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+          />
+        </label>
+
+        <div className="grid gap-3">
+          <p className="text-sm text-slate-200">Classes and divisions (optional)</p>
+          <div className="grid gap-3">
+            {classDivisions.map((entry, index) => (
+              <div
+                key={entry.id}
+                className="grid gap-3 rounded-xl border border-white/10 bg-night-900/70 p-3 sm:grid-cols-[1fr_1fr_auto]"
+              >
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Class {index + 1}
+                  <input
+                    type="text"
+                    value={entry.className}
+                    placeholder="e.g., Open Rodeo"
+                    onChange={(event) =>
+                      handleClassDivisionChange({ ...entry, className: event.target.value })
+                    }
+                    className="rounded-xl border border-white/10 bg-night-900/80 px-3 py-2 text-slate-100 placeholder:text-slate-400"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Division
+                  <input
+                    type="text"
+                    value={entry.divisionName}
+                    placeholder="e.g., Youth, Amateur, Pro"
+                    onChange={(event) =>
+                      handleClassDivisionChange({ ...entry, divisionName: event.target.value })
+                    }
+                    className="rounded-xl border border-white/10 bg-night-900/80 px-3 py-2 text-slate-100 placeholder:text-slate-400"
+                  />
+                </label>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveClassDivision(entry.id)}
+                    disabled={classDivisions.length === 1}
+                    className="rounded-full border border-white/10 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-200 transition hover:border-red-300/40 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleAddClassDivision}
+            className="w-fit rounded-full border border-white/10 bg-night-900/70 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-100 transition hover:bg-white/10"
+          >
+            Add class/division
+          </button>
+          <input type="hidden" name="classes_details" value={serializedClassesDetails} />
+        </div>
+
+        <label className="grid gap-2 text-sm text-slate-200">
+          Flyer image URL (optional)
+          <input
+            type="url"
+            name="flyer_image_url"
+            placeholder="https://example.com/flyer.jpg"
+            className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+          />
+          <span className="text-xs text-slate-300">Use a full URL starting with https://.</span>
+        </label>
+
+        <label className="grid gap-2 text-sm text-slate-200">
+          Official website URL (optional)
+          <input
+            type="url"
+            name="official_website_url"
+            placeholder="https://example.com"
+            className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+          />
+          <span className="text-xs text-slate-300">Use a full URL starting with https://.</span>
+        </label>
       </div>
 
-      <div className="grid gap-2 text-sm text-slate-300">
-        Flyer image URL (optional)
-        <input
-          type="url"
-          name="flyer_image_url"
-          className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-        />
-      </div>
-
-      <div className="grid gap-2 text-sm text-slate-300">
-        Official website URL (optional)
-        <input
-          type="url"
-          name="official_website_url"
-          className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
-        />
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-200">Classification</p>
+        <p className="text-sm text-slate-300">Select disciplines and sanctioning organizations.</p>
       </div>
 
       <div className="grid gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-100">Disciplines</p>
-          <p className="text-xs text-slate-400">Select every discipline featured at this event.</p>
+          <p className="text-xs text-slate-300">Select every discipline featured at this event.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {disciplines.map((discipline) => (
@@ -983,7 +1477,15 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
             </label>
           ))}
           {disciplines.length === 0 ? (
-            <p className="text-xs text-slate-400">No disciplines configured yet.</p>
+            <label className="grid gap-2 text-sm text-slate-200 sm:col-span-2">
+              Discipline names (comma separated)
+              <input
+                type="text"
+                name="manual_disciplines"
+                placeholder="e.g., Barrel Racing, Team Roping"
+                className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+              />
+            </label>
           ) : null}
         </div>
       </div>
@@ -991,7 +1493,7 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
       <div className="grid gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-100">Sanctioning organizations</p>
-          <p className="text-xs text-slate-400">Choose any sanctioning bodies for this event.</p>
+          <p className="text-xs text-slate-300">Choose any sanctioning bodies for this event.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {sanctioningBodies.map((body) => (
@@ -1011,17 +1513,31 @@ export default function EventForm({ venues, disciplines, sanctioningBodies }: Ev
             </label>
           ))}
           {sanctioningBodies.length === 0 ? (
-            <p className="text-xs text-slate-400">No sanctioning bodies configured yet.</p>
+            <label className="grid gap-2 text-sm text-slate-200 sm:col-span-2">
+              Sanctioning organizations (comma separated)
+              <input
+                type="text"
+                name="manual_sanctions"
+                placeholder="e.g., PRCA, APRA"
+                className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+              />
+            </label>
           ) : null}
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="mt-2 rounded-full border border-brand-400/50 bg-brand-400/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:bg-brand-400/30"
-      >
-        Submit event
-      </button>
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-200">Review and submit</p>
+        <p className="text-sm text-slate-300">
+          Confirm your event details and submit for community approval.
+        </p>
+      </div>
+
+      <SubmitButton
+        label="Submit event"
+        pendingLabel="Submitting..."
+        className="mt-2 rounded-full border border-brand-400/50 bg-brand-400/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:bg-brand-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/60 disabled:cursor-not-allowed disabled:opacity-60"
+      />
     </form>
   );
 }

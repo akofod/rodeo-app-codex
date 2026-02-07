@@ -21,6 +21,8 @@ describe('SEO helpers', () => {
           id: 'event-1',
           title: 'Test Rodeo',
           start_datetime: new Date().toISOString(),
+          end_datetime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          timezone: 'America/Denver',
           venue_id: 'venue-1',
         },
       ],

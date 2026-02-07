@@ -7,6 +7,7 @@ export type MapMarker = {
   id: string;
   type: 'EVENT' | 'VENUE';
   entityId?: string;
+  detailHref?: string;
   title: string;
   subtitle: string;
   detail?: string;
@@ -20,6 +21,8 @@ type MapboxMapProps = {
   favoriteVenueIds?: Set<string>;
   isSignedIn?: boolean;
   onToggleVenueFavorite?: (venueId: string, shouldFavorite: boolean) => void;
+  selectedMarkerId?: string | null;
+  onSelectMarker?: (markerId: string) => void;
 };
 
 const defaultCenter: [number, number] = [-98.5795, 39.8283];
@@ -30,10 +33,13 @@ export default function MapboxMap({
   favoriteVenueIds,
   isSignedIn,
   onToggleVenueFavorite,
+  selectedMarkerId,
+  onSelectMarker,
 }: MapboxMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const markerByIdRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -70,6 +76,7 @@ export default function MapboxMap({
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
+    markerByIdRef.current = new Map();
 
     if (markers.length === 0) {
       return;
@@ -80,10 +87,16 @@ export default function MapboxMap({
     markers.forEach((marker) => {
       const element = document.createElement('button');
       element.type = 'button';
+      element.ariaLabel = `${marker.type === 'EVENT' ? 'Event' : 'Venue'}: ${marker.title}`;
       element.className =
         marker.type === 'EVENT'
-          ? 'h-3 w-3 rounded-full border border-white/70 bg-brand-400 shadow-glow'
-          : 'h-3.5 w-3.5 rounded-full border border-red-100 bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)]';
+          ? 'inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/70 bg-brand-400 text-[10px] font-semibold text-night-950 shadow-glow'
+          : 'inline-flex h-5 w-5 items-center justify-center rounded-sm border border-red-100 bg-red-500 text-[10px] font-semibold text-night-950 shadow-[0_0_12px_rgba(239,68,68,0.7)]';
+      element.textContent = marker.type === 'EVENT' ? 'E' : 'V';
+
+      element.addEventListener('click', () => {
+        onSelectMarker?.(marker.id);
+      });
 
       const popupContent = document.createElement('div');
       popupContent.className = 'ws-map-popup-content';
@@ -103,6 +116,15 @@ export default function MapboxMap({
         popupDetail.className = 'ws-map-popup-detail';
         popupDetail.textContent = marker.detail;
         popupContent.append(popupDetail);
+      }
+
+      if (marker.detailHref) {
+        const popupLink = document.createElement('a');
+        popupLink.href = marker.detailHref;
+        popupLink.className = 'ws-map-popup-signin';
+        popupLink.textContent =
+          marker.type === 'EVENT' ? 'View event details' : 'View venue details';
+        popupContent.append(popupLink);
       }
 
       if (marker.type === 'VENUE') {
@@ -158,6 +180,7 @@ export default function MapboxMap({
         .addTo(map);
 
       markersRef.current.push(mapMarker);
+      markerByIdRef.current.set(marker.id, mapMarker);
       bounds.extend([marker.longitude, marker.latitude]);
     });
 
@@ -173,7 +196,27 @@ export default function MapboxMap({
     } else {
       map.once('load', fitBounds);
     }
-  }, [favoriteVenueIds, isSignedIn, markers, onToggleVenueFavorite]);
+  }, [favoriteVenueIds, isSignedIn, markers, onSelectMarker, onToggleVenueFavorite]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedMarkerId) {
+      return;
+    }
+
+    const selectedMarker = markers.find((marker) => marker.id === selectedMarkerId);
+    const mapMarker = markerByIdRef.current.get(selectedMarkerId);
+    if (!selectedMarker || !mapMarker) {
+      return;
+    }
+
+    map.easeTo({
+      center: [selectedMarker.longitude, selectedMarker.latitude],
+      duration: 300,
+      zoom: Math.max(map.getZoom(), 6),
+    });
+    mapMarker.togglePopup();
+  }, [markers, selectedMarkerId]);
 
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
     return (

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 
 import { ensureProfile } from '@/lib/supabase/profiles';
+import { getSiteUrl } from '@/lib/seo/site';
 import { createSupabaseServerActionClient } from '@/lib/supabase/server-actions';
 
 const getString = (formData: FormData, key: string) => {
@@ -12,8 +13,6 @@ const getString = (formData: FormData, key: string) => {
   }
   return value.trim();
 };
-
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
 export const signInWithEmail = async (formData: FormData) => {
   const email = getString(formData, 'email');
@@ -59,29 +58,26 @@ export const signUpWithEmail = async (formData: FormData) => {
   redirect('/dashboard');
 };
 
-export const signInWithGoogle = async () => {
-  const supabase = createSupabaseServerActionClient();
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${appUrl}/api/auth/callback`,
-    },
-  });
-
-  if (error) {
-    redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
-  }
-
-  if (data.url) {
-    redirect(data.url);
-  }
-
-  redirect('/sign-in');
-};
-
 export const signOut = async () => {
   const supabase = createSupabaseServerActionClient();
   await supabase.auth.signOut();
   redirect('/');
+};
+
+export const requestPasswordReset = async (formData: FormData) => {
+  const email = getString(formData, 'email');
+  if (!email) {
+    redirect('/forgot-password?error=Enter an email address.');
+  }
+
+  const supabase = createSupabaseServerActionClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl()}/sign-in`,
+  });
+
+  if (error) {
+    redirect(`/forgot-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect('/forgot-password?success=Password reset email sent.');
 };

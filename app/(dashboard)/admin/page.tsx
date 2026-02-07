@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { getServiceCategoryLabel } from '@/lib/services/categories';
 import { getPendingEvents, getPendingServices, getPendingVenues } from '@/lib/supabase/admin-data';
 import { getApprovedVenues } from '@/lib/supabase/venues';
 
@@ -219,7 +220,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     <div>
                       <p className="text-sm font-semibold text-slate-100">{service.name}</p>
                       <p className="text-xs text-slate-400">
-                        {service.category} - {service.zip_code}
+                        {getServiceCategoryLabel(service.category)} - {service.zip_code}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">

@@ -8,6 +8,7 @@ import type {
   EventSanctionInsert,
   EventUpdate,
 } from '@/types/database';
+import { isValidEventTimezone } from '@/lib/events/timezones';
 
 import { requireSupabaseAdminClient } from './admin';
 import { requireAdmin, requireUser } from './guards';
@@ -19,6 +20,8 @@ export type EventCreateInput = {
   description?: string | null;
   venue_id: string;
   start_datetime: string;
+  end_datetime: string;
+  timezone: string;
   flyer_image_url?: string | null;
   official_website_url?: string | null;
   classes_details?: string | null;
@@ -48,8 +51,20 @@ const validateEventInput = (input: EventCreateInput): string | null => {
   if (!normalize(input.start_datetime)) {
     return 'Start date/time is required.';
   }
+  if (!normalize(input.end_datetime)) {
+    return 'End date/time is required.';
+  }
   if (!isValidDate(input.start_datetime)) {
     return 'Start date/time must be a valid ISO date string.';
+  }
+  if (!isValidDate(input.end_datetime)) {
+    return 'End date/time must be a valid ISO date string.';
+  }
+  if (new Date(input.end_datetime).getTime() <= new Date(input.start_datetime).getTime()) {
+    return 'End date/time must be after start date/time.';
+  }
+  if (!isValidEventTimezone(input.timezone)) {
+    return 'Timezone is required.';
   }
   return null;
 };
@@ -69,6 +84,8 @@ export const createEvent = async (input: EventCreateInput): Promise<DataResult<E
       description: input.description?.trim() || null,
       venue_id: normalize(input.venue_id),
       start_datetime: normalize(input.start_datetime),
+      end_datetime: normalize(input.end_datetime),
+      timezone: normalize(input.timezone),
       flyer_image_url: input.flyer_image_url?.trim() || null,
       official_website_url: input.official_website_url?.trim() || null,
       classes_details: input.classes_details?.trim() || null,
@@ -105,6 +122,23 @@ export const updateEvent = async (
         return toErrorResult('Start date/time must be a valid ISO date string.');
       }
       payload.start_datetime = updates.start_datetime.trim();
+    }
+    if (updates.end_datetime !== undefined) {
+      if (!isValidDate(updates.end_datetime)) {
+        return toErrorResult('End date/time must be a valid ISO date string.');
+      }
+      payload.end_datetime = updates.end_datetime.trim();
+    }
+    if (updates.timezone !== undefined) {
+      if (!isValidEventTimezone(updates.timezone)) {
+        return toErrorResult('Timezone is required.');
+      }
+      payload.timezone = updates.timezone.trim();
+    }
+    const nextStart = updates.start_datetime;
+    const nextEnd = updates.end_datetime;
+    if (nextStart && nextEnd && new Date(nextEnd).getTime() <= new Date(nextStart).getTime()) {
+      return toErrorResult('End date/time must be after start date/time.');
     }
     if (updates.flyer_image_url !== undefined)
       payload.flyer_image_url = updates.flyer_image_url?.trim() || null;

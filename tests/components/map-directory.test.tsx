@@ -27,7 +27,7 @@ const markers = [
 describe('MapDirectory', () => {
   it('renders the list and results label', () => {
     const html = renderToString(<MapDirectory markers={markers} />);
-    expect(html).toContain('2 total');
+    expect(html).toContain('2 results');
     expect(html).toContain('Boise Arena');
   });
 });

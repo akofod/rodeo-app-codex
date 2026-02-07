@@ -118,6 +118,8 @@ export interface Event {
   description: string | null;
   venue_id: string;
   start_datetime: string;
+  end_datetime: string;
+  timezone: string;
   flyer_image_url: string | null;
   official_website_url: string | null;
   classes_details: string | null;
@@ -132,6 +134,8 @@ export interface EventInsert {
   description?: string | null;
   venue_id: string;
   start_datetime: string;
+  end_datetime: string;
+  timezone: string;
   flyer_image_url?: string | null;
   official_website_url?: string | null;
   classes_details?: string | null;
@@ -145,6 +149,8 @@ export interface EventUpdate {
   description?: string | null;
   venue_id?: string;
   start_datetime?: string;
+  end_datetime?: string;
+  timezone?: string;
   flyer_image_url?: string | null;
   official_website_url?: string | null;
   classes_details?: string | null;
@@ -176,6 +182,12 @@ export interface Service {
   name: string;
   category: string;
   description: string | null;
+  image_url: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  specialties: string | null;
+  pricing_details: string | null;
+  availability_notes: string | null;
   phone: string | null;
   website_url: string | null;
   service_radius_miles: number;
@@ -190,6 +202,12 @@ export interface ServiceInsert {
   name: string;
   category: string;
   description?: string | null;
+  image_url?: string | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  specialties?: string | null;
+  pricing_details?: string | null;
+  availability_notes?: string | null;
   phone?: string | null;
   website_url?: string | null;
   service_radius_miles: number;
@@ -203,6 +221,12 @@ export interface ServiceUpdate {
   name?: string;
   category?: string;
   description?: string | null;
+  image_url?: string | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  specialties?: string | null;
+  pricing_details?: string | null;
+  availability_notes?: string | null;
   phone?: string | null;
   website_url?: string | null;
   service_radius_miles?: number;

@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+import DraftPersistence from '@/components/forms/DraftPersistence';
+import ServiceImageField from '@/components/forms/ServiceImageField';
+import SubmitButton from '@/components/forms/SubmitButton';
+import { getServiceCategoryLabel, SERVICE_CATEGORY_OPTIONS } from '@/lib/services/categories';
 import { getUserServices } from '@/lib/supabase/services';
 
 import { createServiceAction } from './actions';
@@ -30,9 +34,7 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-2">
           <p className="text-xs uppercase tracking-[0.3em] text-brand-300">Services</p>
-          <h1 className="font-display text-3xl text-slate-100 sm:text-4xl">
-            Manage your services
-          </h1>
+          <h1 className="font-display text-3xl text-slate-100 sm:text-4xl">Manage your services</h1>
           <p className="text-sm text-slate-300">
             List your business or service for approval before it appears in the directory.
           </p>
@@ -45,13 +47,19 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         </header>
 
         {errorMessage ? (
-          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-5 py-4 text-sm text-red-100">
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-400/40 bg-red-500/10 px-5 py-4 text-sm text-red-100"
+          >
             {errorMessage}
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
+          <div
+            role="status"
+            className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100"
+          >
             {successMessage}
           </div>
         ) : null}
@@ -63,78 +71,163 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
               Tell the community what you offer and how far you travel.
             </p>
             <form action={createServiceAction} className="mt-6 grid gap-4">
-              <label className="grid gap-2 text-sm text-slate-300">
-                Service name
+              <DraftPersistence
+                storageKey="service-form-draft"
+                fieldNames={[
+                  'name',
+                  'category',
+                  'description',
+                  'image_url',
+                  'contact_name',
+                  'contact_email',
+                  'specialties',
+                  'phone',
+                  'website_url',
+                  'pricing_details',
+                  'availability_notes',
+                  'service_radius_miles',
+                  'zip_code',
+                ]}
+              />
+              <p className="text-xs text-slate-300">
+                Draft fields are saved in this browser while you complete the form.
+              </p>
+              <label className="grid gap-2 text-sm text-slate-200">
+                Service name (required)
                 <input
                   type="text"
                   name="name"
                   required
-                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
                 />
               </label>
-              <label className="grid gap-2 text-sm text-slate-300">
-                Category
-                <input
-                  type="text"
+              <label className="grid gap-2 text-sm text-slate-200">
+                Category (required)
+                <select
                   name="category"
                   required
-                  placeholder="Farrier, Trainer, Stock Contractor"
-                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-500"
-                />
+                  defaultValue=""
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                >
+                  <option value="" disabled>
+                    Select a category
+                  </option>
+                  {SERVICE_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
-              <label className="grid gap-2 text-sm text-slate-300">
+              <label className="grid gap-2 text-sm text-slate-200">
                 Description (optional)
                 <textarea
                   name="description"
                   rows={3}
-                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+                />
+              </label>
+              <ServiceImageField />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Contact person (optional)
+                  <input
+                    type="text"
+                    name="contact_name"
+                    placeholder="e.g., Riley Morgan"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Contact email (optional)
+                  <input
+                    type="email"
+                    name="contact_email"
+                    placeholder="name@example.com"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+                  />
+                </label>
+              </div>
+              <label className="grid gap-2 text-sm text-slate-200">
+                Specialties (optional)
+                <input
+                  type="text"
+                  name="specialties"
+                  placeholder="e.g., Barrel horses, youth clinics"
+                  className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
                 />
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid gap-2 text-sm text-slate-200">
                   Phone (optional)
                   <input
                     type="tel"
                     name="phone"
-                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
                   />
                 </label>
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid gap-2 text-sm text-slate-200">
                   Website (optional)
                   <input
                     type="url"
                     name="website_url"
-                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                    placeholder="https://example.com"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
                   />
+                  <span className="text-xs text-slate-300">
+                    Use a full URL starting with https://.
+                  </span>
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm text-slate-300">
-                  Service radius (miles)
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Pricing details (optional)
+                  <textarea
+                    name="pricing_details"
+                    rows={2}
+                    placeholder="Share hourly rate, package range, or estimate details."
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Availability notes (optional)
+                  <textarea
+                    name="availability_notes"
+                    rows={2}
+                    placeholder="Include days, travel windows, or booking lead times."
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-slate-300">
+                Add at least one contact method (phone or website) so customers can reach you.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm text-slate-200">
+                  Service radius (miles) (required)
                   <input
                     type="number"
                     name="service_radius_miles"
                     min={1}
                     required
-                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
                   />
                 </label>
-                <label className="grid gap-2 text-sm text-slate-300">
-                  ZIP code
+                <label className="grid gap-2 text-sm text-slate-200">
+                  ZIP code (required)
                   <input
                     type="text"
                     name="zip_code"
                     required
-                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100"
+                    className="rounded-xl border border-white/10 bg-night-900/70 px-4 py-2 text-slate-100 placeholder:text-slate-400"
                   />
                 </label>
               </div>
-              <button
-                type="submit"
+              <SubmitButton
+                label="Submit service"
+                pendingLabel="Submitting..."
                 className="mt-2 rounded-full border border-brand-400/50 bg-brand-400/20 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-brand-100 transition hover:border-brand-300 hover:bg-brand-400/30"
-              >
-                Submit service
-              </button>
+              />
             </form>
           </div>
 
@@ -156,8 +249,8 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
                       <div>
                         <p className="text-sm font-semibold text-slate-100">{service.name}</p>
                         <p className="text-xs text-slate-400">
-                          {service.category} - {service.service_radius_miles} miles -{' '}
-                          {service.zip_code}
+                          {getServiceCategoryLabel(service.category)} -{' '}
+                          {service.service_radius_miles} miles - {service.zip_code}
                         </p>
                       </div>
                       <span

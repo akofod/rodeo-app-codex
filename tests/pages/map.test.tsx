@@ -13,6 +13,8 @@ vi.mock('@/lib/supabase/events', () => ({
         title: 'Test Rodeo',
         venue_id: 'venue-1',
         start_datetime: new Date().toISOString(),
+        end_datetime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        timezone: 'America/Denver',
       },
     ],
     error: null,
@@ -47,7 +49,9 @@ describe('MapPage', () => {
     process.env.NEXT_PUBLIC_MAPBOX_TOKEN = '';
     const element = await MapPage();
     render(element);
-    expect(screen.getByRole('heading', { name: /live map of events and venues/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /live map of events and venues/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/map view/i)).toBeInTheDocument();
   });
 });
